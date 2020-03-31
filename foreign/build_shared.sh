@@ -7,19 +7,18 @@ pushd .build
 # PHYSFS
 cmake ../src/physfs/
 make -j4
-find lib*.so* -print0 | xargs -0 -I '{}' cp '{}' ../lib
+cp libphysfs.so ../lib
 rm -r *
 
 # GLFW
 cmake -DBUILD_SHARED_LIBS=ON ../src/glfw
 make -j4
 pushd src
-find lib*.so* -print0 | xargs -0 -I '{}' cp '{}' ../../lib
+cp libglfw.so ../../lib
 popd
 rm -r *
 
 # SOLOUD
-
 popd
 # foreign
 pushd ./src/soloud/build/
@@ -29,10 +28,11 @@ make -j4 config=release64 SoloudDynamic
 popd
 rm -r gmake
 pushd ../lib
-echo $(readlink -f ../../../../lib)
-find lib*.so* -print0 | xargs -0 -I '{}' cp '{}' ../../../lib
+cp libsoloud_x64.so ../../../lib
 rm *
 popd
 # foreign
 popd
 make
+
+rm -r .build
