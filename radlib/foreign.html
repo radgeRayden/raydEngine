@@ -1,0 +1,55 @@
+<pre class="language-scopes"><code class="language-scopes"><span class="token comment"># foreign import sugar
+</span><span class="token comment"># Motivation: offer a syntax for importing C libraries that takes care of repetitive tasks like
+</span><span class="token comment"># renaming scopes, 'merging' headers, writing stubs for macros and creating subscopes.
+</span><span class="token comment">#
+</span><span class="token comment"># Mockup of what an import could look like:
+</span><span class="token comment">
+</span>foreign
+    <span class="token comment"># headers are included in the same traslation unit, in order.
+</span>    <span class="token keyword">include</span> <span class="token string">"headerA.h"</span> <span class="token string">"headerB.h"</span> <span class="token string">"headerC.h"</span>
+        <span class="token comment"># compiler options
+</span>        <span class="token keyword">options</span> <span class="token string">"&#45;DHEADERA&#95;IMPLEMENTATION"</span>
+    with&#45;macros
+        <span class="token comment"># wraps macros and turns them into values, calling with provided arguments if appropriate.
+</span><span class="token comment">        # Some macros have no arguments and only return a valua that would be inconvenient to
+</span><span class="token comment">        # construct manually, those can be passed as a Symbol instead of a key&#45;value pair.
+</span>        VERSION <span class="token operator">=</span> (GET&#95;VERSION <span class="token number">1</span> <span class="token number">2</span> <span class="token number">3</span>)
+        PRECOMPUTED&#95;VALUE
+    with&#45;scope libABC
+        <span class="token comment"># syntax: from [subscopes] matching [match&#45;fn] apply [transformation&#45;fn].
+</span><span class="token comment">        # will iterate on all kv pairs in each provided subscope, select the ones that match,
+</span><span class="token comment">        # then transform (for example rename the symbol or wrap the value) and append to the
+</span><span class="token comment">        # new scope (in this case libABC).
+</span><span class="token comment">        # Possible subscopes to be used with "from" are:
+</span><span class="token comment">          &#45; extern
+</span><span class="token comment">          &#45; define
+</span><span class="token comment">          &#45; const
+</span><span class="token comment">          &#45; struct
+</span><span class="token comment">          &#45; typedef
+</span><span class="token comment">          &#45; union
+</span><span class="token comment">          &#45; enum
+</span>        <span class="token keyword">from</span> <span class="token function">extern</span> matching match&#45;fn apply transformation&#45;fn
+    <span class="token comment"># NOTE: with scope can be repeated as much as needed, one for each subscope in the resulting
+</span><span class="token comment">    # module.
+</span><span class="token comment"># The final module scope looks like this:
+</span><span class="token keyword">let</span> module <span class="token operator">=</span>
+    foreign ... <span class="token comment">#etc
+</span><span class="token comment">
+</span>module.libABC
+module.extern <span class="token comment"># and define, const, etc
+</span><span class="token comment">
+</span><span class="token comment"># then on the binding code the user can organize things a bit better:
+</span><span class="token keyword">vvv</span> <span class="token keyword">bind</span> module <span class="token operator">=</span>
+<span class="token keyword">do</span>
+    <span class="token keyword">let</span> cmodule <span class="token operator">=</span>
+        foreign ... <span class="token comment"># etc
+</span><span class="token comment">    # one possibility: just returning one of the submodules
+</span>    libABC
+    <span class="token comment"># another is to manipulate the scope further, if there is some semantic meaning to have
+</span><span class="token comment">    # sub namespaces.
+</span>    <span class="token keyword">do</span>
+        <span class="token keyword">let</span> libABC <span class="token operator">=</span> cmodule.libABC
+        <span class="token keyword">using</span> cmodule.extern
+        <span class="token keyword">using</span> cmodule.typedef <span class="token function">filter</span> <span class="token string">"cmod&#95;"</span>
+        <span class="token keyword">locals</span>;
+</code></pre>

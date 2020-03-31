@@ -1,0 +1,12 @@
+[submodule "foreign/include/stb"]
+	path = foreign/include/stb
+	url = https://github.com/nothings/stb/
+[submodule "foreign/src/cimgui"]
+	path = foreign/src/cimgui
+	url = https://github.com/cimgui/cimgui/
+[submodule "foreign/src/glfw"]
+	path = foreign/src/glfw
+	url = https://github.com/glfw/glfw
+[submodule "foreign/src/soloud"]
+	path = foreign/src/soloud
+	url = https://github.com/jarikomppa/soloud
