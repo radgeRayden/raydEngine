@@ -3,11 +3,11 @@ fn remove-prefix (input prefix)
     imply prefix string
     rslice input (countof prefix)
 
-fn join-strings (...)
-    let memcpy =
-        extern 'llvm.memcpy.p0i8.p0i8.i64
-            function void (mutable rawstring) rawstring i64 bool
+let memcpy =
+    extern 'llvm.memcpy.p0i8.p0i8.i64
+        function void (mutable rawstring) rawstring i64 bool
 
+fn join-strings (...)
     let result-size =
         va-lfold 0
             inline (__ substring size)
@@ -62,6 +62,60 @@ sugar interpolate (str)
                     cons lhs chunks
     cons (qq [join-strings]) chunks
 
+# simple string replacement - no pattern
+fn replace (str substring substitution)
+    using import Array
+    let cstring = (include "string.h")
+    let cstring = cstring.extern
+
+    # first we walk the string finding matches and recording their positions;
+    let rawsource = (str as rawstring)
+    local match-positions : (Array usize) # indices of every substring found
+    local match-ptr = (cstring.strstr rawsource substring)
+    while (match-ptr != null)
+        let relative-index = ((ptrtoint match-ptr usize) - (ptrtoint rawsource usize))
+        'append match-positions relative-index
+        match-ptr =
+            cstring.strstr
+                # search starting from just after the last match
+                & (rawsource @ (relative-index + (countof substring)))
+                substring
+
+    # then we allocate a new string with the computed size and fill it in
+    local new-string-mem : (Array i8)
+    discard-size := ((countof substring) * (countof match-positions))
+    substitution-size := ((countof substitution) * (countof match-positions))
+    'resize new-string-mem ((countof str) - discard-size + substitution-size)
+
+    let copy-position source-position =
+        fold (copy-position source-position = 0:usize 0:usize) for match-position in match-positions
+            # copy non altered string chunk
+            copy-size := (match-position - source-position)
+            memcpy
+                & (new-string-mem @ copy-position)         # destination
+                & (rawsource @ source-position)            # source
+                copy-size as i64  # amount
+                false
+            copy-position := (copy-position + copy-size)
+            memcpy
+                & (new-string-mem @ copy-position)
+                substitution
+                (countof substitution) as i64
+                false
+            _
+                (copy-position + (countof substitution))
+                (match-position + (countof substring))
+
+    # now we copy the tail of the string in
+    copy-size := ((countof str) - source-position)
+    memcpy
+        & (new-string-mem @ copy-position)
+        & (rawsource @ source-position)
+        copy-size as i64
+        false
+       
+    string new-string-mem
+
 run-stage;
 
 fn run-tests ()
@@ -83,7 +137,15 @@ fn run-tests ()
                     "ABC is ${ABC}, CDE is ${CDE}, and the sum is ${(+ ABC CDE)}. This other string is ${str}"
                 "ABC is 123, CDE is 345, and the sum is 468. This other string is banana"
 
-
+    do
+        test
+            ==
+                replace "abc def ghi jkl" " " "_"
+                "abc_def_ghi_jkl"
+        test
+            ==
+                replace "abc def ghi jkl" "def " "9"
+                "abc 9ghi jkl"
     ;
 
 static-if main-module?
