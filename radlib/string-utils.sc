@@ -41,12 +41,12 @@ sugar interpolate (str)
             tostring value
 
     let chunks =
-        loop (str chunks overall-index = str '() 0)
-            let match? start end = ('match? "\\{.+?\\}" str)
+        loop (str chunks = str '())
+            let match? start end = ('match? "\\$\\{.+?\\}" str) # matches ${...}
             if (not match?)
-                break ('reverse chunks)
+                break ('reverse (cons str chunks))
             let lhs = (lslice str start)
-            let code = (slice str (start + 1) (end - 1)) # cuts off the brackets
+            let code = (slice str (start + 2) (end - 1)) # cuts off the special chars
             let parsed-code = (sc_parse_from_string code)
             # copy anchor from source string, adding the index as offset
             # NOTE: this doesn't work. Maybe I need to tag everything individually?
@@ -58,7 +58,6 @@ sugar interpolate (str)
                 cons
                     cons (qq [any->string]) (parsed-code as list)
                     cons lhs chunks
-                overall-index + end
     cons (qq [join-strings]) chunks
 
 run-stage;
@@ -88,4 +87,6 @@ fn run-tests ()
 static-if main-module?
     run-tests;
 
-locals;
+do
+    let join-strings interpolate remove-prefix
+    locals;
