@@ -80,7 +80,6 @@ fn run-tests ()
         test
             ==
                 interpolate
-                    "ABC is {ABC}, CDE is {CDE}, and the sum is {(+ ABC CDE)}. This other string is {str}"
                     "ABC is ${ABC}, CDE is ${CDE}, and the sum is ${(+ ABC CDE)}. This other string is ${str}"
                 "ABC is 123, CDE is 345, and the sum is 468. This other string is banana"
 
