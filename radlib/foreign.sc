@@ -1,64 +1,159 @@
-import .string-utils
+using import .core-extensions
+using import .string-utils
+
+fn typename->Ctypename (sym)
+    let T =
+        try
+            ('@ (globals) (sym as Symbol))
+        else
+            sym
+    if (('typeof T) == type)
+        T as:= type
+        if (T < integer)
+            signedness := (? ('signed? T) "signed" "unsigned")
+            let _type =
+                switch ('bitcount T)
+                case 8
+                    "char"
+                case 16
+                    "short int"
+                case 32
+                    "int"
+                case 64
+                    "long int"
+                default
+                    error "unsupported type translation"
+            (.. signedness " " _type)
+        elseif (T < real)
+            let _type =
+                switch ('bitcount T)
+                case 32
+                    "float"
+                case 64
+                    "double"
+                default
+                    error "unsupported type translation"
+            _type
+        else
+            error "unsupported type translation"
+    else
+        tostring (T as Symbol)
+
+let wrapper-prefix = "scopes_wrapper__"
+
+fn gen-C-arglist (args)
+    argcount := ('argcount args)
+    if (argcount == 0)
+        ""
+    fold (result = "") for i arg in (enumerate ('args args))
+        arg as:= string
+        last? := (i == (argcount - 1))
+        if last?
+            result .. arg
+        else
+            .. result arg ", "
+
+# runtime dependant
+fn gen-macro-wrapper-fn (macro args)
+    argcount := ('argcount args)
+    using import itertools
+    let args =
+        ->> ('args args)
+            map typename->Ctypename
+            Value.arglist-sink argcount
+    let dummy-values =
+        ->> ('args args)
+            map
+                inline (argT)
+                    interpolate "(${argT as string}){0}"
+            Value.arglist-sink argcount
+
+    let fn-args =
+        ->> (enumerate ('args args))
+            map
+                inline (i argT)
+                    interpolate "${argT as string} arg${i}"
+            Value.arglist-sink argcount
+
+    let forwarded =
+        ->> (range argcount)
+            map
+                inline (i)
+                    "arg" .. (tostring i)
+            Value.arglist-sink argcount
+
+    interpolate
+        """"typeof(${macro}(${gen-C-arglist dummy-values}))
+            ${wrapper-prefix}${macro} (${gen-C-arglist fn-args}) {
+                return ${macro}(${gen-C-arglist forwarded});
+            }
+
+fn gen-constant-wrapper-fn (macro)
+    interpolate
+        """"typeof(${macro}) ${wrapper-prefix}${macro} () {
+                return ${macro};
+            }
 
 sugar foreign (args...)
-    fn wrap-macro (name args...)
-        let argcount = (va-countof args...)
+    let args result include-args code =
+        loop (args result include-args code = args... '() '() "")
+            if (empty? args)
+                break args result include-args code
+            sugar-match args
+            case ((header as string) rest...)
+                # the \n at the end is to signal to `include` that this is to be compiled
+                # NOTE: enveloping the includestr in quotes here is a choice!
+                # I can't guarantee it'll always be the correct one, but I haven't seen a good
+                # argument that you can't just always use quotes instead of angled brackets.
+                incstr := (.. "#include \"" header "\"\n")
+                let code =
+                    .. incstr code # include string must go first!
+                _ rest... result include-args code
+            case (('with-constants defines...) rest...)
+                let at next = (decons defines...)
+                let wrappers =
+                    loop (_define rest wrapper-code = at next "")
+                        code := (wrapper-code .. (gen-constant-wrapper-fn (_define as Symbol)))
+                        if (empty? rest)
+                            break code
+                        let at next = (decons rest)
+                        _ at next code
+                # wrappers have to go at the 'bottom' to preserve the includes
+                code := (code .. wrappers)
+                _ rest... result include-args code
+            case (('with-macros macros...) rest...)
+                let at next = (decons macros...)
+                let wrappers =
+                    loop (_define rest wrapper-code = at next "")
+                        let code =
+                            if (('typeof _define) == list)
+                                using import itertools
+                                macro := (_define as list)
+                                let name args = (decons macro)
+                                let arglist =
+                                    ->> args (Value.arglist-sink (countof args))
 
-    fn gen-code (cfilename code opts scope)
-        let scope =
-            do
-                hide-traceback;
-                (sc_import_c cfilename code opts scope)
-        `scope
+                                wrapper-code .. (gen-macro-wrapper-fn (name as Symbol) arglist)
+                            else
+                                let arglist = (sc_argument_list_new 0 null)
+                                wrapper-code .. (gen-macro-wrapper-fn (_define as Symbol) arglist)
 
-    let modulename = (('@ sugar-scope 'module-path) as string)
-    loop (args modulename ext opts includestr scope = args... modulename ".c" '() "" (nullof Scope))
-        sugar-match args
-        case (('using (name as Symbol)) rest...)
-            let value = ((sc_expand name '() sugar-scope) as Scope)
-            repeat rest... modulename ext opts includestr value
-        case (('extern "C++") rest...)
-            if (modulename == ".cpp")
-                hide-traceback;
-                error "duplicate 'extern \"C++\"'"
-            repeat rest... modulename ".cpp" opts includestr scope
-        case (('options opts...) rest...)
-            let opts =
-                loop (outopts inopts = '() opts...)
-                    if (empty? inopts)
-                        break ('reverse outopts)
-                    let at next = (decons inopts)
-                    let val =
-                        do
-                            let expr = (sc_expand at '() sugar-scope)
-                            sc_prove expr
-                    if (('typeof val) != string)
-                        error "option arguments must evaluate to constant strings"
-                    val as:= string
-                    outopts := (cons val outopts)
-                    repeat outopts next
-            repeat rest... modulename ext opts includestr scope
-        case ((s as string) rest...)
-            if (not (empty? includestr))
-                hide-traceback;
-                error "duplicate include string"
-            repeat rest... modulename ext opts s scope
-        case ()
-            let sz = (countof includestr)
-            if (sz == 0)
-                hide-traceback;
-                error "include string is empty"
-            let includestr =
-                if (includestr @ (sz - 1) == 10:i8)
-                    # code block
-                    includestr
-                else (.. "#include \"" includestr "\"")
-            return
-                gen-code (.. modulename ext) includestr opts scope
-                next-expr
-        default
-            hide-traceback;
-            error (.. "invalid syntax: " (repr args))
+                        if (empty? rest)
+                            break code
+
+                        let at next = (decons rest)
+                        _ at next code
+
+                _ rest... result include-args (code .. wrappers)
+            default
+                let at next = (decons args)
+                include-args := (cons at include-args)
+                _ (next as list) result include-args code
+   
+    include-args := (cons code include-args)
+    _
+        qq [(cons 'include include-args)]
+        next-expr
 
 # rebinds names in scope without their C prefixes (common in libraries), while
 # leaving the original names accessible.
