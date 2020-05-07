@@ -6,7 +6,7 @@ import ..2Ddraw
 HID.init (HID.GLContextOptions) (HID.WindowOptions)
 gfx.init;
 
-ig.init ('force-unwrap HID.app-window)
+ig.init (HID.get-window-handle)
 
 let vert-shader frag-shader = (2Ddraw.get-default-shader-sources)
 global main-shader = (gfx.Shader frag-shader vert-shader)
@@ -29,13 +29,14 @@ fn draw ()
     'flush pbatch
 
 
-HID.window.kickoff-event-cycle
-    fn "frame" ()
-        gfx.clear;
-        draw;
+while (not (HID.window.received-quit-event?))
+    HID.window.poll-events;
+    gfx.clear;
+    draw;
 
-        using ig
-        with-gui
-            global show-demo-window = true
-            if show-demo-window
-                ig.ShowDemoWindow &show-demo-window
+    using ig
+    with-gui
+        global show-demo-window = true
+        if show-demo-window
+            ig.ShowDemoWindow &show-demo-window
+    HID.window.swap-buffers;
