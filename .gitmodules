@@ -10,3 +10,6 @@
 [submodule "foreign/src/soloud"]
 	path = foreign/src/soloud
 	url = https://github.com/jarikomppa/soloud
+[submodule "radlib"]
+	path = radlib
+	url = git@github.com:radgeRayden/radlib.git
