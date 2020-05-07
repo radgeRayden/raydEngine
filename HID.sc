@@ -5,7 +5,7 @@
 using import struct
 using import enum
 using import Option
-using import .radlib.core-extensions
+using import radlib.core-extensions
 glfw := (import .foreign.glfw)
 
 # --------------------------------------------------------------------------------

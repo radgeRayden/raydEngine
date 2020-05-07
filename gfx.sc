@@ -5,7 +5,7 @@ using import Array
 using import Map
 import glm
 import .math
-using import .radlib.core-extensions
+using import radlib.core-extensions
 using import Rc
 gl := (import .foreign.gl)
 

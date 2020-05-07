@@ -18,7 +18,7 @@ using import Array
 import .HID
 import .gfx
 import .imgui
-platform := (import .radlib.platform)
+platform := (import radlib.platform)
 
 HID.init (HID.GLContextOptions) (HID.WindowOptions)
 gfx.init;
@@ -107,7 +107,7 @@ fn runner-GUI ()
         for str in onscreen-messages
             Text str
 do
-    file-watcher := (import .radlib.file-watcher)
+    file-watcher := (import radlib.file-watcher)
     local fw = (file-watcher.FileWatcher)
     'watch-file fw (sc_realpath filename) (file-watcher.EventKind.MODIFIED)
         fn "source-modified" ()

@@ -7,7 +7,7 @@ pass 'macos
 default
     error "Unsupported OS."
 
-using import ..radlib.foreign
+using import radlib.foreign
 let soloud =
     include "include/soloud_c.h"
 

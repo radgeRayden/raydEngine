@@ -1,5 +1,5 @@
 using import struct
-using import .radlib.core-extensions
+using import radlib.core-extensions
 
 define-scope random
     # http://prng.di.unimi.it/

@@ -1,5 +1,5 @@
 using import glm
-using import .radlib.core-extensions
+using import radlib.core-extensions
 
 fn 2drotate (v angle)
     let rcos rsin = (cos angle) (sin angle)
