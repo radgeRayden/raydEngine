@@ -66,13 +66,13 @@ for scope in ('lineage glm)
                     let columns rows = (('@ v 'Columns) as i32) (('@ v 'Rows) as i32)
                     # because SPIR-V insists on compiling matrices to arrays of vectors,
                       I'll leave this commented out for now, until it's fixed (or forever).
-                    # let mat-suffix =
-                    #     if (columns == rows)
-                    #         tostring columns
-                    #     else
-                    #         .. (tostring columns) "x" (tostring rows)
-                    # "MAT" .. mat-suffix
-                    "VEC" .. (tostring columns)
+                    let mat-suffix =
+                        if (columns == rows)
+                            tostring columns
+                        else
+                            .. (tostring columns) "x" (tostring rows)
+                    "MAT" .. mat-suffix
+                    # "VEC" .. (tostring columns)
                 else ""
             let gltype = (.. "GL_" element-type "_" layout)
             try
@@ -115,13 +115,11 @@ typedef+ glm.mat-type
         columns           := (('@ subtype 'Columns) as i32)
         rows              := (('@ subtype 'Rows) as i32)
         elem-type-abbr    := (element-type-abbreviation subtype)
-        fn-name           := (.. "Uniform" (tostring columns) elem-type-abbr "v")
+        fn-name           := (.. "UniformMatrix" (tostring columns) elem-type-abbr "v")
         glUniform-variant := ('@ gl (Symbol fn-name))
         spice-quote
             local v = self
-            # because SPIR-V wants our matrices to be arrays
-              of vectors, we use the same semantics here.
-            glUniform-variant location rows (bitcast &v (pointer subtype.ElementType))
+            glUniform-variant location 1 false (bitcast &v (pointer subtype.ElementType))
 run-stage;
 
 
