@@ -45,6 +45,7 @@ fn init (native-window-handle)
 
 do
     using ig
+    let ig = ig
 
     let
         with-gui

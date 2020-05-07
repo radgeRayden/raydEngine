@@ -52,7 +52,9 @@ fn update ()
     ;
 
 using HID.window
+using import ..radlib.platform
 while (not (received-quit-event?))
     poll-events;
     update;
+    sleep 0.001
     swap-buffers;
