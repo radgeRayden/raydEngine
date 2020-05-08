@@ -3,10 +3,10 @@ import ..HID
 import ..gfx
 import ..2Ddraw
 
-HID.init (HID.GLContextOptions) (HID.WindowOptions)
+HID.init (HID.WindowOptions) (HID.GLContextOptions)
 gfx.init;
 
-ig.init (HID.get-window-handle)
+ig.init (HID.get-GLFW-window)
 
 let vert-shader frag-shader = (2Ddraw.get-default-shader-sources)
 global main-shader = (gfx.Shader frag-shader vert-shader)
@@ -29,6 +29,7 @@ fn draw ()
     'flush pbatch
 
 
+using import radlib.platform
 while (not (HID.window.received-quit-event?))
     HID.window.poll-events;
     gfx.clear;
@@ -39,4 +40,5 @@ while (not (HID.window.received-quit-event?))
         global show-demo-window = true
         if show-demo-window
             ig.ShowDemoWindow &show-demo-window
+    sleep 0.001
     HID.window.swap-buffers;

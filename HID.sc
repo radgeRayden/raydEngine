@@ -152,6 +152,20 @@ define-scope window
         current-window-options = window-options
         ;
 
+    fn create-wgpu-surface ()
+        let wgpu = (import .foreign.wgpu-native)
+        static-match operating-system
+        case 'linux
+            let x11-display = (glfw.GetX11Display)
+            let x11-window = (glfw.GetX11Window (unwrap-window))
+            wgpu.create_surface_from_xlib (x11-display as (mutable pointer voidstar)) x11-window
+        case 'windows
+            let hwnd = (glfw.GetWin32Window (unwrap-window))
+            let hinstance = (glfw.header.extern.GetModuleHandleA null)
+            wgpu.create_surface_from_windows_hwnd hinstance hwnd
+        default
+            error "OS not supported"
+
 # --------------------------------------------------------------------------------
 define-scope keyboard
     enum KeyCode plain
@@ -358,7 +372,7 @@ struct GLContextOptions plain
     version : GLVersion
     debug? : bool = true
 
-fn init (gfx-config window-config)
+fn... init (window-config : WindowOptions, gfx-config = none)
     imply window-config WindowOptions
 
     glfw.SetErrorCallback
@@ -369,8 +383,8 @@ fn init (gfx-config window-config)
 
     glfw.Init;
 
-    static-match (typeof gfx-config)
-    case GLContextOptions
+    static-if (not (none? gfx-config))
+        imply gfx-config GLContextOptions
         # default opengl hints
         glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_OPENGL_API
         glfw.WindowHint glfw.GLFW_DOUBLEBUFFER true
@@ -385,16 +399,17 @@ fn init (gfx-config window-config)
         glfw.WindowHint glfw.GLFW_OPENGL_PROFILE glfw.GLFW_OPENGL_CORE_PROFILE
 
         glfw.WindowHint glfw.GLFW_SAMPLES 4
-
-    default
-        static-assert false "Unknown configuration struct type."
+    else
+        glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_NO_API
 
     window-handle :=
         (glfw.CreateWindow window-config.width window-config.height window-config.title null null)
     if (window-handle == null)
         error "Failed to create a window with specified context settings."
 
-    glfw.MakeContextCurrent window-handle
+    # context operations only make sense if we are using opengl backend
+    gfx-config and (glfw.MakeContextCurrent window-handle)
+
     app-window = window-handle
 
     local default-icon-image =
@@ -497,6 +512,5 @@ do
         on-mouse-button-event
         on-mouse-moved
 
-    let native-window-handle = app-window
-    let get-window-handle = unwrap-window
+    let get-GLFW-window = unwrap-window
     locals;
