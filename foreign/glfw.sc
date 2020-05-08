@@ -14,10 +14,11 @@ using import radlib.foreign
 let filter-pattern =  "^(glfw|GLFW)(?=[^_])"
 run-stage;
 define-scope glfw
-    import .headers
-    using headers.extern filter filter-pattern
-    using headers.typedef filter filter-pattern
-    using headers.define filter "^GLFW_"
+    import .platform
+    using platform.extern filter filter-pattern
+    using platform.typedef filter filter-pattern
+    using platform.define filter "^GLFW_"
+    let X11Display = platform.typedef.X11Display
     locals;
 
 let glfw = (sanitize-scope glfw filter-pattern)
