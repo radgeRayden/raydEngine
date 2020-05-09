@@ -297,23 +297,47 @@ define-scope keyboard
         PRESS = glfw.GLFW_PRESS
         RELEASE = glfw.GLFW_RELEASE
         REPEAT = glfw.GLFW_REPEAT
+    enum KeyModifier plain
+        SHIFT = glfw.GLFW_MOD_SHIFT
+        ALT = glfw.GLFW_MOD_ALT
+        CONTROL = glfw.GLFW_MOD_CONTROL
+        SUPER = glfw.GLFW_MOD_SUPER
+        CAPS_LOCK = glfw.GLFW_MOD_CAPS_LOCK
+        NUM_LOCK = glfw.GLFW_MOD_NUM_LOCK
+
     struct KeyEvent plain
         keycode : KeyCode
         scancode : i32
         action : KeyAction
         modifiers : i32
+
     inline mod-shift? (mods)
-        (mods & glfw.GLFW_MOD_SHIFT) != 0
+        (mods & KeyModifier.SHIFT) != 0
     inline mod-alt? (mods)
-        (mods & glfw.GLFW_MOD_ALT) != 0
+        (mods & KeyModifier.ALT) != 0
     inline mod-ctrl? (mods)
-        (mods & glfw.GLFW_MOD_CONTROL) != 0
+        (mods & KeyModifier.CONTROL) != 0
     inline mod-super? (mods)
-        (mods & glfw.GLFW_MOD_SUPER) != 0
+        (mods & KeyModifier.SUPER) != 0
     inline mod-caps-lock? (mods)
-        (mods & glfw.GLFW_MOD_CAPS_LOCK) != 0
+        (mods & KeyModifier.CAPS_LOCK) != 0
     inline mod-num-lock? (mods)
-        (mods & glfw.GLFW_MOD_NUM_LOCK) != 0
+        (mods & KeyModifier.NUM_LOCK) != 0
+
+    inline released? (ev code)
+        (ev.action == KeyAction.RELEASE) and (ev.keycode == code)
+
+    inline pressed? (ev code)
+        (ev.action == KeyAction.PRESS) and (ev.keycode == code)
+
+    inline keybind (event bindings...)
+        va-lfold true
+            inline (__ current computed)
+                static-if ((typeof current) == KeyModifier)
+                    computed and ((event.modifiers & current) != 0)
+                else
+                    computed and (down? current)
+            bindings...
 
 define-scope mouse
     enum Button plain
