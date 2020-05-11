@@ -396,7 +396,7 @@ struct GLContextOptions plain
     version : GLVersion
     debug? : bool = true
 
-fn... init (window-config : WindowOptions, gfx-config = none)
+fn... init (window-config = (WindowOptions), gfx-config = none)
     imply window-config WindowOptions
 
     glfw.SetErrorCallback
