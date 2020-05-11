@@ -12,6 +12,19 @@ let vert-shader frag-shader = (2Ddraw.get-default-shader-sources)
 global main-shader = (gfx.Shader frag-shader vert-shader)
 'bind! main-shader
 
+HID.on-key-event =
+    fn "key-event" (ev)
+        raising Error
+        using HID.keyboard
+
+        let code mods = KeyCode KeyModifier
+
+        if (released? ev KeyCode.ESCAPE)
+            HID.window.close;
+
+        if (keybind ev mods.ALT code.ENTER)
+            HID.window.toggle-fullscreen;
+
 global pbatch = (2Ddraw.PrimitiveBatch)
 fn draw ()
     using import ..math
