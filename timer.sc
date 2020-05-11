@@ -30,8 +30,6 @@ fn ticks->miliseconds (ticks)
 fn ticks->seconds (ticks)
     (ticks as f64) / 1000000000 # 1 billion nanoseconds
 
-locals;
-
 struct Timer plain
     start : u64
     last-update : u64
