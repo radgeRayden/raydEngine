@@ -10,3 +10,6 @@
 [submodule "foreign/src/soloud"]
 	path = foreign/src/soloud
 	url = https://github.com/jarikomppa/soloud
+[submodule "foreign/src/wgpu-native"]
+	path = foreign/src/wgpu-native
+	url = https://github.com/gfx-rs/wgpu-native
