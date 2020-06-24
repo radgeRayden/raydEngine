@@ -10,8 +10,12 @@ switch operating-system
 case 'linux
     load-library "libX11.so"
     load-library (.. module-dir "/foreign/lib/libraydengine" lib-suffix ".so")
+    load-library (.. module-dir "/foreign/lib/libglfw.so")
+    load-library (.. module-dir "/foreign/lib/libsoloud_64" lib-suffix ".so")
 case 'windows
     load-library (.. module-dir "/foreign/lib/libraydengine" lib-suffix ".dll")
+    load-library (.. module-dir "/foreign/lib/glfw.dll")
+    load-library (.. module-dir "/foreign/lib/soloud_64" lib-suffix ".dll")
 default
     error "Unsupported OS"
 
