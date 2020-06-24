@@ -7,6 +7,7 @@ using import enum
 using import Option
 using import radlib.core-extensions
 glfw := (import .foreign.glfw)
+let AppSettings = (import radlib.app-settings)
 
 # --------------------------------------------------------------------------------
 inline uninitialized-error ()
@@ -24,7 +25,13 @@ inline unwrap-window ()
     try
         'unwrap app-window
     else
-        error "HID module not initialized"
+        static-if AppSettings.AOT?
+            using import radlib.libc
+            stdio.puts "HID module not initialized"
+            exit 1
+        else
+            assert app-window "HID module not initialized"
+            exit 1 # force noreturn
 
 # --------------------------------------------------------------------------------
 # I keep track of every window related option in a global (since we only have one window),
