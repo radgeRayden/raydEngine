@@ -131,9 +131,9 @@ typedef GPUBuffer < Struct
     inline __typecall (cls kind target)
         struct (.. (tostring kind) "Buffer") < this-type
             _handle : u32
-            _size : i32
+            _size : u32
             inline __typecall (cls size)
-                imply size i32
+                imply size u32
                 local handle : u32
                 # FIXME: this might error
                 gl.GenBuffers 1 &handle
