@@ -410,9 +410,7 @@ run-stage;
 # default callbacks
 inline callback-pointer (args...)
     pointer
-        raises
-            function void args...
-            Error
+        function void args...
 global on-window-moved : (callback-pointer i32 i32)
 global on-window-resized : (callback-pointer i32 i32)
 global on-key-event : (callback-pointer keyboard.KeyEvent)
