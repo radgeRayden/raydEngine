@@ -1,8 +1,9 @@
 using import glm
-import ..HID
-import ..gfx
-import ..timer
-import ..PRNG
+import ..use
+import HID
+import gfx
+import timer
+import PRNG
 
 global color-timer : timer.Timer
 global rng = (PRNG.random.RNG (timer.clock-time))
@@ -22,13 +23,12 @@ fn choose-color ()
     next-color.g = (nrandom)
     next-color.b = (nrandom)
 
-HID.init (HID.GLContextOptions) (HID.WindowOptions)
-HID.window.change-title "gfx: clear (ESC to exit)"
+HID.init  (HID.WindowOptions) (HID.GfxAPI.OpenGL)
+HID.window.set-title "gfx: clear (ESC to exit)"
 gfx.init;
 
 HID.on-key-event =
     fn "key" (event)
-        raising Error
         using HID.keyboard
         let action keycode = event.action event.keycode
         # esc to close
@@ -39,6 +39,7 @@ HID.on-key-event =
         if ((action == KeyAction.PRESS) and (mod-alt? event.modifiers) and (keycode == KeyCode.ENTER))
             HID.window.toggle-fullscreen;
 
+global myNumber : f32
 fn update ()
     let time-amount = (min (elapsed-time) 1.0:f64)
 
