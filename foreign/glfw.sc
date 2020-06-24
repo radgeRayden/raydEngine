@@ -1,12 +1,3 @@
-switch operating-system
-case 'linux
-    load-library (.. module-dir "/lib/libglfw.so")
-case 'windows
-    load-library (.. module-dir "/lib/glfw.dll")
-pass 'macos
-default
-    error "Unsupported OS."
-
 using import radlib.core-extensions
 using import radlib.foreign
 
@@ -14,11 +5,13 @@ using import radlib.foreign
 let filter-pattern =  "^(glfw|GLFW)(?=[^_])"
 run-stage;
 define-scope glfw
-    import .platform
-    using platform.extern filter filter-pattern
-    using platform.typedef filter filter-pattern
-    using platform.define filter "^GLFW_"
-    let X11Display = platform.typedef.X11Display
+    let header =
+        include
+            options "-I./include"
+            "GLFW/glfw3.h"
+    using header.extern filter filter-pattern
+    using header.typedef filter filter-pattern
+    using header.define filter "^GLFW_"
     locals;
 
 let glfw = (sanitize-scope glfw filter-pattern)

@@ -1,34 +1,26 @@
-load-library (.. module-dir "/lib/raydengine.so")
+using import radlib.core-extensions
+using import radlib.foreign
+
 # import C functions and sanitize the scope
-vvv bind glad
-do
-    let glad =
+define-scope glad
+    let header =
         include
             options
                 .. "-I" module-dir "/include"
             "glad/glad.h"
-    do
-        using glad.extern
-        using glad.typedef
-        using glad.define
-        locals;
-   
-let gl =
-    fold (scope = (Scope)) for k v in glad
-        let name = ((k as Symbol) as string)
-        if ('match? "^(gl[A-Z])" name )
-            let new-name = (rslice name (countof "gl"))
-            'bind scope (Symbol new-name) v
-        elseif ('match? "^GL" name)
-            'bind scope k v 
-        else scope
-
+    using header.extern
+    using header.typedef
+    using header.define filter "^GL_"
+  
+let gl = (sanitize-scope glad "^gl[A-Z]")
 run-stage;
 
 fn init! ()
     let status = (glad.gladLoadGL)
     if (status == 0)
-        error "failed to initialize openGL"
+        let puts = (extern 'puts (function i32 rawstring))
+        puts "failed to initialize opengl"
+        exit 1
 
 .. gl
     do

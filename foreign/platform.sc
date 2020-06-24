@@ -11,5 +11,6 @@ let platform-define =
 let exports =
     include
         options
+            .. "-I" module-dir "/include"
             "-D" .. platform-define
         "include/platform.h"

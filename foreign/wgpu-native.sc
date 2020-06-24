@@ -1,13 +1,6 @@
+let AppSettings = (import radlib.app-settings)
 using import radlib.foreign
 using import radlib.core-extensions
-
-switch operating-system
-case 'linux
-    load-library (.. module-dir "/lib/libwgpu_native.so")
-case 'windows
-    load-library (.. module-dir "/lib/wgpu_native.dll")
-default
-    error "OS not supported"
 
 define-scope wgpu-native
     let header =
@@ -35,5 +28,4 @@ let wgpu-native =
         else
             scope
 
-# https://github.com/radgeRayden/radlib/blob/master/foreign.sc#L160
 sanitize-scope wgpu-native "^(wgpu_|WGPU)"

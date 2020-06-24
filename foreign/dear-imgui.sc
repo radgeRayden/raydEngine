@@ -1,8 +1,6 @@
 using import radlib.foreign
 using import radlib.core-extensions
 
-load-library (module-dir .. "/lib/raydengine.so")
-
 let filter-pattern = "^(ig|Im)"
 run-stage;
 define-scope imgui
