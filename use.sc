@@ -5,16 +5,15 @@ let lib-suffix =
         ""
     else
         "_d"
-let lib-extension =
-    switch operating-system
-    case 'linux
-        ".so"
-    case 'windows
-        ".dll"
-    default
-        error "Unsupported OS"
 
-load-library (.. module-dir "/foreign/lib/libraydengine" lib-suffix lib-extension)
+switch operating-system
+case 'linux
+    load-library "libX11.so"
+    load-library (.. module-dir "/foreign/lib/libraydengine" lib-suffix ".so")
+case 'windows
+    load-library (.. module-dir "/foreign/lib/libraydengine" lib-suffix ".dll")
+default
+    error "Unsupported OS"
 
 let new-path =
     list
