@@ -11,6 +11,10 @@ struct FileData
         property
             inline "get" (self)
                 'get-text self
+    Size :=
+        property
+            inline "get" (self)
+                (countof self.data)
 
     fn get-text (self)
         let data-ptr = (imply self.data (pointer u8))
