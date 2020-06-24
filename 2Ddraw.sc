@@ -77,7 +77,7 @@ struct PrimitiveBatch
         super-type.__typecall cls
             vertexbuffer = (gfx.VertexBuffer (10000 * (sizeof 2DStdVertexAttributes)))
             indexbuffer = (gfx.IndexBuffer 20000) # 2x should be good?
-            current-texture = (Rc.clone (white-1px-texture))
+            current-texture = (copy (white-1px-texture))
 
     # We conclude a batch implicitly when certain state changes, like the currently used texture.
     # By setting the current texture to `none`, we communicate the
@@ -157,7 +157,7 @@ struct PrimitiveBatch
         # we need to change texture _before_ appending any data otherwise the current
         # update will fall under old settings.
         # untextured mode
-        'set-texture self (Rc.clone (white-1px-texture))
+        'set-texture self (copy (white-1px-texture))
 
         VertexAttributes := 2DStdVertexAttributes
         origin := (vec2 x y)
@@ -210,7 +210,7 @@ struct PrimitiveBatch
 
     fn push-circle (self x y radius segments color)
         # untextured mode
-        'set-texture self (Rc.clone (white-1px-texture))
+        'set-texture self (copy (white-1px-texture))
 
         VertexAttributes := 2DStdVertexAttributes
         center-index := (countof self.vertices)
@@ -239,7 +239,7 @@ struct PrimitiveBatch
         ;
     fn push-line (self points thickness color)
         # untextured mode
-        'set-texture self (Rc.clone (white-1px-texture))
+        'set-texture self (copy (white-1px-texture))
 
         VertexAttributes := 2DStdVertexAttributes
         using math
