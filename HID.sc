@@ -443,11 +443,7 @@ fn set-callbacks ()
         if (cb == null)
             # doesn't need to do anything
             return;
-        try
-            cb args...
-        except (ex)
-            print ('format ex)
-            assert false
+        cb args...
 
     glfw.SetKeyCallback window-handle
         fn "glfw-key-callback" (window keycode scancode action modifiers)
@@ -490,25 +486,82 @@ fn set-callbacks ()
     glfw.SetCursorPosCallback window-handle
         fn "glfw-mouse-cursor-pos-callback" (window xpos ypos)
             wrap-callback on-mouse-moved xpos ypos
+
+typedef HIDLifetimeCookie :: (storageof Nothing)
+    inline __typecall (cls)
+        bitcast none this-type
+    inline __drop (self)
+        print "Shutting down GLFW"
+        glfw.DestroyWindow ('force-unwrap app-window)
+        app-window = none
+        # glfw.Terminate;
+
+fn... init (window-config = (WindowOptions), context : GfxAPI)
+    imply window-config WindowOptions
+
+    glfw.SetErrorCallback
+        fn "glfw-raise-error" (error-code error-text)
+            print (string error-text)
+            # handle possible errors gracefully if possible or quit
+            assert false
+
+    glfw.Init;
+
+    dispatch context
+    case OpenGL (context)
+        # default opengl hints
+        glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_OPENGL_API
+        glfw.WindowHint glfw.GLFW_DOUBLEBUFFER true
+        glfw.WindowHint glfw.GLFW_OPENGL_FORWARD_COMPAT true
+
+        version := context.version
+        if ((version.major == 0) and (version.minor == 0))
+        else
+            glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MAJOR version.major
+            glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MINOR version.minor
+        glfw.WindowHint glfw.GLFW_OPENGL_DEBUG_CONTEXT context.debug?
+        glfw.WindowHint glfw.GLFW_OPENGL_PROFILE glfw.GLFW_OPENGL_CORE_PROFILE
+
+        glfw.WindowHint glfw.GLFW_SAMPLES 4
+    case WebGPU ()
+        glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_NO_API
+    default
+        ;
+
+    window-handle :=
+        (glfw.CreateWindow window-config.width window-config.height window-config.title null null)
+    if (window-handle == null)
+        error "Failed to create a window with specified context settings."
+
+    if (('literal context) == GfxAPI.OpenGL.Literal)
+        glfw.MakeContextCurrent window-handle
+
+    app-window = window-handle
+    window.configure window-config
+
+    set-callbacks;
+
     # ------------------------------------------------------------------------------------------
     # trying to remember to do this in every submodule to ease debugging when
     # some non initialized function segfaults the whole thing.
     print "HID module initialized."
 
-    # using the borrowchecker for automatic library cleanup.
-    typedef HIDLifetimeCookie :: (storageof Nothing)
-        inline __typecall (cls)
-            bitcast none this-type
-        inline __drop (self)
-            print "Shutting down GLFW"
-            glfw.DestroyWindow ('force-unwrap app-window)
-            app-window = none
-            glfw.Terminate;
-
     HIDLifetimeCookie;
+# this variant is very much dedicated to custom executable / distribution,
+# so we skip steps that should be taken care of.
+case (window-config : WindowOptions, prev-handle : (mutable pointer glfw.window))
+    app-window = prev-handle
+
+    glfw.SetWindowAttrib prev-handle glfw.GLFW_DECORATED true
+    window.configure window-config
+
+    set-callbacks;
+    HIDLifetimeCookie;
+   
 
 do
     let
+        GfxAPI
         GLContextOptions
         WindowOptions
         init
