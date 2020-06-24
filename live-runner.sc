@@ -15,32 +15,80 @@ let _module-name =
 run-stage;
 
 using import Array
+using import radlib.core-extensions
 import .HID
 import .gfx
 import .imgui
 platform := (import radlib.platform)
 
-HID.init (HID.GLContextOptions) (HID.WindowOptions)
+HID.init (HID.WindowOptions) (HID.GLContextOptions)
 gfx.init;
-imgui.init (HID.get-window-handle)
+imgui.init (HID.get-GLFW-window)
 
 # event interface
 using import Option
 global on-update : (Option (pointer (function void f64)))
 
 # UI overlay
-global onscreen-messages : (Array string)
+global __runner-messages : (Array string)
 fn display-message (msg)
-    'append onscreen-messages msg
+    'append __runner-messages msg
     print msg
 
 fn reload-source ()
     print "reloading source"
-    'clear onscreen-messages
+    'clear __runner-messages
+    let upvalues =
+        .. (globals)
+            do
+                let __runner-messages
+                let reload-source = this-function
+
+                using import Map
+                global __persistent-data : (Map Symbol (tuple (ptr = voidstar) (T = type)))
+                sugar live (values...)
+                    sugar-match values...
+                    case (name ': T '= value)
+                        name as:= Symbol
+                        T := ((sc_expand T '() sugar-scope) as type)
+                        let result =
+                            label verify
+                                try
+                                    let entry = ('get __persistent-data name)
+                                    let ptr eT = entry.ptr entry.T
+                                    if (eT != T)
+                                        merge verify
+                                            qq
+                                                drop (ptrtoref (bitcast [ptr] (mutable pointer [T])))
+                                    return
+                                        qq
+                                            let [name] =
+                                                ptrtoref (view (bitcast [ptr] (mutable pointer [T])))
+                                else
+                                    '()
+
+                        let result =
+                            qq
+                                embed
+                                    [result]
+                                    global [name] : [T] = [value]
+                                    'set [__persistent-data] (sugar-quote [name])
+                                        tupleof
+                                            ptr = (bitcast (reftoptr (view [name])) voidstar)
+                                            T = [T]
+                        deref result
+
+                    default
+                        error "syntax: live <name> : <type> = <value>"
+                locals;
+    print (typeof upvalues)
+
     let scope =
         try
             load-module _module-name filename
                 main-module? = true
+                scope = upvalues
+
         except (ex)
             display-message ('format ex)
             return;
@@ -100,12 +148,6 @@ HID.on-key-event =
 
 reload-source;
 
-fn runner-GUI ()
-    using imgui
-    with-gui
-        Text "messages"
-        for str in onscreen-messages
-            Text str
 do
     file-watcher := (import radlib.file-watcher)
     local fw = (file-watcher.FileWatcher)
@@ -121,7 +163,6 @@ do
         'poll-events fw
         if on-update
             (('force-unwrap on-update) 0)
-        runner-GUI;
         platform.sleep 0.001
 
         HID.window.swap-buffers;
