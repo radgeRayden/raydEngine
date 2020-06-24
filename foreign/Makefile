@@ -8,11 +8,13 @@ ifndef config
 	config = debug
 endif
 
-OBJS = ./src/stb.o ./src/soloud/src/c_api/soloud_c.o
+OBJS = ./src/stb.o ./src/soloud/src/c_api/soloud_c.o ./src/glad/src/glad.o
+INCLUDE_OPTS = -I./src/glad/include
+
 PHYSFS_STATIC = ./src/physfs/build/libphysfs.a
 GLFW3_STATIC = ./src/glfw/build/src/libglfw3.a
 ifeq ($(config),debug)
-	WGPU_STATIC = ./src/wgpu-native/target/debug/libwgpu_native.lib
+	WGPU_STATIC = ./src/wgpu-native/target/debug/libwgpu_native.a
 	SOLOUD_STATIC = ./src/soloud/lib/libsoloud_static_x64_d.a
 else
 	WGPU_STATIC = ./src/wgpu-native/target/release/wgpu_native.dll
@@ -21,10 +23,9 @@ endif
 LIBS = $(PHYSFS_STATIC) $(GLFW3_STATIC) $(SOLOUD_STATIC) $(WGPU_STATIC)
 HEADERS = physfs.h GLFW/ soloud/ wgpu.h stb_image.h
 
+CFLAGS = -Wall -O2 -DRAYDENGINE_OFFLINE_BUILD -shared -fPIC -I./src/soloud/include $(INCLUDE_OPTS)
 ifeq ($(config),debug)
-	CFLAGS = -g -Wall -O2 -DRAYDENGINE_OFFLINE_BUILD -shared -fPIC -I./src/soloud/include
-else
-	CFLAGS = -Wall -O2 -DRAYDENGINE_OFFLINE_BUILD -shared -fPIC -I./src/soloud/include
+	CFLAGS += -g
 endif
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 
