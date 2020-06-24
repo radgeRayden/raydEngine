@@ -1,62 +1,110 @@
+##
+# Project Title
 #
-# Runtime library for dependencies that require an in-tree build
-# Cross Platform Makefile
-# Compatible with Ubuntu 14.04.1 and macOS
+# @file
+# @version 0.1
 
-# all cimgui compilation happens here
-OBJS = ./src/cimgui/cimgui.o
-OBJS += ./src/cimgui/imgui/imgui.o
-OBJS += ./src/cimgui/imgui/imgui_draw.o
-OBJS += ./src/cimgui/imgui/imgui_demo.o
-OBJS += ./src/cimgui/imgui/imgui_widgets.o
-# and the imgui backends. Headers are modified to work with C.
-OBJS += ./src/imgui_impl_glfw_opengl3/imgui_impl_glfw.o
-OBJS += ./src/imgui_impl_glfw_opengl3/imgui_impl_opengl3.o
-# glad
-OBJS += ./src/glad/src/glad.o
-# stb stuff
-OBJS += ./src/stb/stb.o
+ifndef config
+	config = debug
+endif
 
-CXXFLAGS=-O2 -fno-exceptions -fno-rtti -DIMGUI_IMPL_OPENGL_LOADER_GLAD -DRAYDENGINE_OFFLINE_BUILD
+OBJS = ./src/stb.o ./src/soloud/src/c_api/soloud_c.o
+PHYSFS_STATIC = ./src/physfs/build/libphysfs.a
+GLFW3_STATIC = ./src/glfw/build/src/libglfw3.a
+ifeq ($(config),debug)
+	WGPU_STATIC = ./src/wgpu-native/target/debug/libwgpu_native.lib
+	SOLOUD_STATIC = ./src/soloud/lib/libsoloud_static_x64_d.a
+else
+	WGPU_STATIC = ./src/wgpu-native/target/release/wgpu_native.dll
+	SOLOUD_STATIC = ./src/soloud/lib/libsoloud_static_x64.a
+endif
+LIBS = $(PHYSFS_STATIC) $(GLFW3_STATIC) $(SOLOUD_STATIC) $(WGPU_STATIC)
+HEADERS = physfs.h GLFW/ soloud/ wgpu.h stb_image.h
+
+ifeq ($(config),debug)
+	CFLAGS = -g -Wall -O2 -DRAYDENGINE_OFFLINE_BUILD -shared -fPIC -I./src/soloud/include
+else
+	CFLAGS = -Wall -O2 -DRAYDENGINE_OFFLINE_BUILD -shared -fPIC -I./src/soloud/include
+endif
+CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 
 UNAME_S := $(shell uname -s)
-
-ifeq ($(UNAME_S), Linux) #LINUX
+ifeq ($(UNAME_S), Linux)
 	ECHO_MESSAGE = "Linux"
-
-	OUTPUTNAME = ./lib/raydengine.so
-	CXXFLAGS += -I./include -I./include/imgui
-	CXXFLAGS += -Wall
-	CXXFLAGS += -shared -fPIC
-	CFLAGS = $(CXXFLAGS)
+	LFLAGS += -lX11
+	MAKEFILE_FLAVOR = Unix
+	MAKE = make
+ifeq ($(config),debug)
+	OUTPUTNAME = ./lib/libraydengine_d.so
+else
+	OUTPUTNAME = ./lib/libraydengine.so
+endif
 endif
 
 ifeq ($(OS), Windows_NT)
 	ECHO_MESSAGE = "Windows"
+	MAKEFILE_FLAVOR = MinGW
+	CC = x86_64-w64-mingw32-gcc
+	CXX = x86_64-w64-mingw32-g++
+	MAKE = mingw32-make
 
+ifeq ($(config),debug)
+	OUTPUTNAME = ./lib/raydengine_d.dll
+else
 	OUTPUTNAME = ./lib/raydengine.dll
-	CXXFLAGS += -I./include -I./cimgui/imgui/ -I.
-	CXXFLAGS += -Wall
-	CXXFLAGS += -shared
-	LINKFLAGS = -limm32
-	CFLAGS = $(CXXFLAGS)
 endif
-
-.cpp.o:
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+endif
 
 all:$(OUTPUTNAME)
 	@echo Build complete for $(ECHO_MESSAGE)
 
-$(OUTPUTNAME):$(OBJS)
-	$(CXX) -o $(OUTPUTNAME) $(OBJS) $(CXXFLAGS) $(LINKFLAGS)
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(PHYSFS_STATIC):src/physfs
+	mkdir -p ./src/physfs/build
+	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS=-fPIC -S ./src/physfs -B ./src/physfs/build
+	${MAKE} -C ./src/physfs/build
+
+$(GLFW3_STATIC):src/glfw
+	mkdir -p ./src/glfw/build
+	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -S ./src/glfw -B ./src/glfw/build
+	${MAKE} -C ./src/glfw/build
+
+$(SOLOUD_STATIC):src/soloud
+	mkdir -p ./src/soloud/build
+	genie --file=./src/soloud/build/genie.lua --with-miniaudio --with-nosound --platform=x64 gmake
+ifeq ($(config),release)
+	${MAKE} -C ./src/soloud/build/gmake config=release64 SoloudStatic
+else
+	${MAKE} -C ./src/soloud/build/gmake config=debug64
+endif
+
+$(WGPU_STATIC):src/wgpu-native
+ifeq ($(config),release)
+	cargo build --manifest-path=./src/wgpu-native/Cargo.toml --release
+else
+	cargo build --manifest-path=./src/wgpu-native/Cargo.toml
+endif
+
+$(OUTPUTNAME):$(LIBS) $(OBJS)
+	mkdir -p ./lib
+	$(CXX) -o $(OUTPUTNAME) $(OBJS) -shared $(LFLAGS) -Wl,--whole-archive $(LIBS) -Wl,--no-whole-archive
+
+install:
+	mkdir -p include
+	cp ./src/physfs/src/physfs.h ./include/
+	cp -r ./src/glfw/include/GLFW ./include/
+	cp -r ./src/soloud/include ./include/soloud
+	cp ./src/wgpu-native/ffi/wgpu.h ./include/
+	cp ./src/stb/stb_image.h ./include/
 
 clean:
+	${MAKE} -C ./src/physfs/build clean
+	${MAKE} -C ./src/glfw/build clean
+	${MAKE} -C ./src/soloud/build/gmake clean
+	rm -rf ./src/wgpu-native/target
 	rm -f $(OBJS)
 
-fclean: clean
-	rm -f $(OUTPUTNAME)
-
-re: fclean all
-
-.PHONY: all clean fclean re
+.PHONY: all install clean fclean re
+# end
