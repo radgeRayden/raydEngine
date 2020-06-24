@@ -165,16 +165,26 @@ define-scope window
         current-window-options = window-options
         ;
 
-    fn create-wgpu-surface ()
+    fn... create-wgpu-surface (window = none,)
+        let window = (window or (unwrap-window))
         let wgpu = (import .foreign.wgpu-native)
         static-match operating-system
         case 'linux
-            let x11-display = (glfw.GetX11Display)
-            let x11-window = (glfw.GetX11Window (unwrap-window))
+            let GetX11Display =
+                extern 'glfwGetX11Display (function voidstar)
+            let GetX11Window =
+                extern 'glfwGetX11Window (function u64 (mutable pointer glfw.window))
+            let x11-display = (GetX11Display)
+            let x11-window = (GetX11Window window)
             wgpu.create_surface_from_xlib (x11-display as (mutable pointer voidstar)) x11-window
         case 'windows
-            let hwnd = (glfw.GetWin32Window (unwrap-window))
-            let hinstance = (glfw.header.extern.GetModuleHandleA null)
+            let GetWin32Window =
+                extern 'glfwGetWin32Window (function voidstar (mutable pointer glfw.window))
+            let GetModuleHandleA =
+                extern 'GetModuleHandleA (function voidstar voidstar)
+
+            let hwnd = (GetWin32Window window)
+            let hinstance = (GetModuleHandleA null)
             wgpu.create_surface_from_windows_hwnd hinstance hwnd
         default
             error "OS not supported"
