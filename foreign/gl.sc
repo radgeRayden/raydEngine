@@ -6,13 +6,13 @@ define-scope glad
     let header =
         include
             options
-                .. "-I" module-dir "/include"
+                .. "-I" module-dir "/include/glad/include"
             "glad/glad.h"
     using header.extern
     using header.typedef
-    using header.define filter "^GL_"
+    using header.define filter "^(GL_|gl[A-Z])"
   
-let gl = (sanitize-scope glad "^gl[A-Z]")
+let gl = (sanitize-scope glad "^gl(?=[A-Z])")
 run-stage;
 
 fn init! ()
