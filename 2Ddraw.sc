@@ -367,22 +367,22 @@ struct SpriteBatch
                 # top left
                 VertexAttributes
                     position = origin
-                    texcoords = (vec2 uv-quad.x uv-quad.y)
+                    texcoords = (vec2 uv-quad.x (uv-quad.y + uv-quad.h))
                     color = color
                 # top right
                 VertexAttributes
                     position = (origin + (math.2drotate (vec2 (quad.w * scalex) 0) orientation))
-                    texcoords = (vec2 (uv-quad.x + uv-quad.w) uv-quad.y)
+                    texcoords = (vec2 (uv-quad.x + uv-quad.w) (uv-quad.y + uv-quad.h))
                     color = color
                 # bottom left
                 VertexAttributes
                     position = (origin + (math.2drotate (vec2 0 (quad.h * scaley)) orientation))
-                    texcoords = (vec2 uv-quad.x (uv-quad.y + uv-quad.h))
+                    texcoords = (vec2 uv-quad.x uv-quad.y)
                     color = color
                 # bottom right
                 VertexAttributes
                     position = (origin + (math.2drotate (vec2 (quad.w * scalex) (quad.h * scaley)) orientation))
-                    texcoords = (vec2 (uv-quad.x + uv-quad.w) (uv-quad.y + uv-quad.h))
+                    texcoords = (vec2 (uv-quad.x + uv-quad.w) uv-quad.y)
                     color = color
         'append self._sprites vertices
         # signal that we need to update buffers next time we draw
