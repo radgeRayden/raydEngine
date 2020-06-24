@@ -319,15 +319,16 @@ struct Shader
         fn update-uniform (self name value array-offset)
             imply name string
 
-            # probably shouldn't be this drastic, maybe just print a warning instead
-            assert ('bound? self)
+            if (not ('bound? self))
+                print "trying to update uniform to unbound shader."
+                return;
             # lookup metadata for this uniform
             let metadata =
                 try
                     'get self._uniform-metadata name
                 except (ex)
-                    hide-traceback;
-                    error ("Shader doesn't contain an uniform called " .. name)
+                    assert false ("Shader doesn't contain an uniform called " .. name)
+                    return;
             let
                 location = metadata.location
                 gltype = metadata.gltype
