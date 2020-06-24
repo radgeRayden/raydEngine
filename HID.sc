@@ -189,6 +189,17 @@ define-scope window
         default
             error "OS not supported"
 
+    fn... monitor-size (monitor : (mutable pointer glfw.monitor) = null,)
+        let monitor =
+            if (monitor == null)
+                (glfw.GetPrimaryMonitor)
+            else
+                monitor
+        let mode = (glfw.GetVideoMode monitor)
+        using import radlib.libc
+        _ (deref mode.width) (deref mode.height)
+
+
 # --------------------------------------------------------------------------------
 define-scope keyboard
     enum KeyCode plain
