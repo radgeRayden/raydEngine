@@ -428,54 +428,12 @@ struct GLContextOptions plain
     version : GLVersion
     debug? : bool = true
 
-fn... init (window-config = (WindowOptions), gfx-config = none)
-    imply window-config WindowOptions
+enum GfxAPI
+    OpenGL : GLContextOptions
+    WebGPU
 
-    glfw.SetErrorCallback
-        fn "glfw-raise-error" (error-code error-text)
-            print (string error-text)
-            # handle possible errors gracefully if possible or quit
-            assert false
-
-    glfw.Init;
-
-    static-if (not (none? gfx-config))
-        imply gfx-config GLContextOptions
-        # default opengl hints
-        glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_OPENGL_API
-        glfw.WindowHint glfw.GLFW_DOUBLEBUFFER true
-        glfw.WindowHint glfw.GLFW_OPENGL_FORWARD_COMPAT true
-
-        version := gfx-config.version
-        if ((version.major == 0) and (version.minor == 0))
-        else
-            glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MAJOR version.major
-            glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MINOR version.minor
-        glfw.WindowHint glfw.GLFW_OPENGL_DEBUG_CONTEXT gfx-config.debug?
-        glfw.WindowHint glfw.GLFW_OPENGL_PROFILE glfw.GLFW_OPENGL_CORE_PROFILE
-
-        glfw.WindowHint glfw.GLFW_SAMPLES 4
-    else
-        glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_NO_API
-
-    window-handle :=
-        (glfw.CreateWindow window-config.width window-config.height window-config.title null null)
-    if (window-handle == null)
-        error "Failed to create a window with specified context settings."
-
-    # context operations only make sense if we are using opengl backend
-    gfx-config and (glfw.MakeContextCurrent window-handle)
-
-    app-window = window-handle
-
-    local default-icon-image =
-        glfw.image
-            width = 128
-            height = 128
-            pixels = (import .icon) # TODO: make a version of this that doesn't depend on stbi
-    glfw.SetWindowIcon window-handle 1 &default-icon-image
-    window.configure window-config
-
+fn set-callbacks ()
+    let window-handle = (unwrap-window)
     # ------------------------------------------------------------------------------------------
     # We set the default user callbacks, and wrap them for GLFW. The layer that
     # talks to GLFW does some massaging of the data and can't be changed in user code,
