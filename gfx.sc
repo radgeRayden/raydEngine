@@ -208,7 +208,7 @@ struct Shader
     _handle : u32
     _uniform-metadata : ShaderInterfaceMap
 
-    inline __typecall (cls frag-source vert-source)
+    inline __typecall (cls vert-source frag-source)
         fn compile-shader! (source kind)
             kind as:= u32
             source as:= rawstring
