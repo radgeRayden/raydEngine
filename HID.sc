@@ -94,11 +94,14 @@ define-scope window
         glfw.GetFramebufferSize (unwrap-window) &width &height
         _ width height
 
-    fn change-size! (width height)
+    fn set-size (width height)
         glfw.SetWindowSize (unwrap-window) width height
         ;
 
-    fn change-title (title)
+    fn set-position (x y)
+        glfw.SetWindowPos (unwrap-window) x y
+
+    fn set-title (title)
         glfw.SetWindowTitle (unwrap-window) title
         ;
 
@@ -145,7 +148,8 @@ define-scope window
         # if we didn't check for fullscreen status, could end up changing monitor
         # mode, which I don't want to allow.
         if (not old-opt.fullscreen?)
-            change-size! width height
+            set-size width height
+            set-position opt.x opt.y
 
         if (opt.fullscreen? != old-opt.fullscreen?)
             toggle-fullscreen;
@@ -155,6 +159,8 @@ define-scope window
 
         if (opt.vsync? != old-opt.vsync?)
             toggle-vsync;
+
+        set-title opt.title
 
         current-window-options = window-options
         ;
