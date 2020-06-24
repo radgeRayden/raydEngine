@@ -6,6 +6,7 @@ tmp/
 # build artifacts
 **/**/build
 foreign/lib/**
+foreign/include/**
 *.o
 *.so
 *.dll
