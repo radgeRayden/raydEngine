@@ -8,6 +8,7 @@ using import radlib.core-extensions
 let wgpu = (import .foreign.wgpu-native)
 let AppSettings = (import radlib.app-settings)
 
+
 enum ResourceRequestError
     TryAgainLater
 
@@ -23,8 +24,74 @@ global istate : GfxState
 struct 2DTexture
 
 struct Shader
+    handle : (Option wgpu.ShaderModuleId)
+    inline __typecall (cls stage fun)
+        let src = (static-compile-spirv stage (static-typify fun))
+        let len = ((countof src) // 4)
 
-struct Pipeline
+        let device = istate.device
+        let handle =
+            wgpu.device_create_shader_module device
+                &local wgpu.ShaderModuleDescriptor
+                    code =
+                        typeinit
+                            bytes = (src as rawstring as (pointer u32))
+                            length = len
+
+        super-type.__typecall cls
+            handle = handle
+
+    inline __drop (self)
+        try
+            wgpu.shader_module_destroy ('unwrap self.handle)
+        else
+            ;
+
+# TODO: many options are hardcoded and have to be refactored out. Will do when different
+# pipelines are required.
+struct RenderPipeline
+    handle : (Option wgpu.RenderPipelineId)
+    inline... __typecall (cls, vertex-shader : Shader, fragment-shader : Shader)
+        let rpip-layout =
+            wgpu.device_create_pipeline_layout istate.device
+                &local wgpu.PipelineLayoutDescriptor
+                    null
+                    0
+        let handle =
+            wgpu.device_create_render_pipeline istate.device
+                &local wgpu.RenderPipelineDescriptor
+                    layout = rpip-layout
+                    vertex_stage =
+                        wgpu.ProgrammableStageDescriptor
+                            module = ('force-unwrap vertex-shader.handle)
+                            entry_point = "main"
+                    fragment_stage =
+                        &local wgpu.ProgrammableStageDescriptor
+                            module = ('force-unwrap fragment-shader.handle)
+                            entry_point = "main"
+                    primitive_topology = wgpu.PrimitiveTopology.TriangleList
+                    rasterization_state =
+                        &local wgpu.RasterizationStateDescriptor
+                    sample_count = 1
+                    color_states =
+                        &local wgpu.ColorStateDescriptor
+                            format = wgpu.TextureFormat.Bgra8UnormSrgb
+                            color_blend =
+                                typeinit
+                                    src_factor = wgpu.BlendFactor.One
+                                    dst_factor = wgpu.BlendFactor.Zero
+                                    operation = wgpu.BlendOperation.Add
+                            write_mask = wgpu.ColorWrite_ALL
+                    color_states_length = 1
+        super-type.__typecall cls
+            handle = handle
+
+
+    inline __drop (self)
+        try
+            wgpu.render_pipeline_destroy ('unwrap self.handle)
+        else
+            ;
 
 struct CommandBuffer
     handle : (Option wgpu.CommandBufferId)
@@ -74,8 +141,30 @@ struct RenderPass
     color-attachments : (Array wgpu.RenderPassColorAttachmentDescriptor)
     depth-attachment  : (Option wgpu.RenderPassDepthStencilAttachmentDescriptor)
 
-    # inline __typecall (cls cmd-encoder)
+    fn set-pipeline (self pip)
+        static-match (typeof pip)
+        case RenderPipeline
+            wgpu.render_pass_set_pipeline ('force-unwrap self.handle) ('force-unwrap pip.handle)
+        default
+            ;
 
+    fn... draw (self, vertex-count : u32, instance-count : u32 = 1,
+                first-vertex : u32 = 0, first-instance : u32 = 0)
+        wgpu.render_pass_draw ('force-unwrap self.handle)
+            vertex-count
+            instance-count
+            first-vertex
+            first-instance
+
+    fn... draw-indexed (self, index-count : u32, instance-count : u32 = 1,
+                first-index : u32 = 0, first-instance : u32 = 0, base-vertex : u32 = 0)
+        wgpu.render_pass_draw_indexed ('force-unwrap self.handle)
+            index-count
+            instance-count
+            first-index
+            base-vertex
+            first-instance
+           
     inline finish (self)
         wgpu.render_pass_end_pass ('force-unwrap self.handle)
         self.handle = none
@@ -86,19 +175,6 @@ struct RenderPass
             wgpu.render_pass_destroy ('unwrap self.handle)
         else
             ;
-
-
-inline create-shader-module (stage fun)
-    let src = (compile-spirv stage (static-typify fun))
-    let len = ((countof src) // 4)
-
-    let device = istate.device
-    wgpu.device_create_shader_module device
-        &local wgpu.ShaderModuleDescriptor
-            code =
-                typeinit
-                    bytes = (src as rawstring as (pointer u32))
-                    length = len
 
 fn update-backbuffer-size (width height)
     let device surface = istate.device istate.surface
@@ -195,7 +271,6 @@ do
         init
         update-backbuffer-size
         acquire-backbuffer
-        create-shader-module
         screen-pass
         present
 
@@ -203,6 +278,8 @@ do
         ResourceRequestError
         CommandEncoder
         RenderPass
+        Shader
+        RenderPipeline
 
     backend := istate
 
