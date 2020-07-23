@@ -146,7 +146,7 @@ struct RenderPass
         case RenderPipeline
             wgpu.render_pass_set_pipeline ('force-unwrap self.handle) ('force-unwrap pip.handle)
         default
-            ;
+            static-error "second argument must be a pipeline object"
 
     fn... draw (self, vertex-count : u32, instance-count : u32 = 1,
                 first-vertex : u32 = 0, first-instance : u32 = 0)
