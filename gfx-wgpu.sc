@@ -85,6 +85,9 @@ struct RenderPipeline
                     color_states_length = 1
         super-type.__typecall cls
             handle = handle
+    case (cls handle)
+        super-type.__typecall cls
+            handle = handle
 
 
     inline __drop (self)
