@@ -22,6 +22,54 @@ struct GfxState plain
 global istate : GfxState
 
 struct 2DTexture
+    width : i32
+    height : i32
+    handle : (Option wgpu.TextureId)
+
+    inline __typecall (cls imagedata debug-name)
+        debug-name := (none? debug-name) and "texture" or debug-name
+        let handle =
+            wgpu.device_create_texture istate.device
+                &local wgpu.TextureDescriptor
+                    label = debug-name
+                    size =
+                        wgpu.Extent3d
+                            width = (imagedata.width as u32)
+                            height = (imagedata.height as u32)
+                            depth = 1 #?
+                    mip_level_count = 1 # TODO: investigate how to handle this
+                    sample_count = 1 # TODO: same
+                    dimension = wgpu.TextureDimension.D2
+                    format = wgpu.TextureFormat.Rgba8Unorm # TODO: different formats
+                    usage = wgpu.TextureUsage_COPY_DST
+
+        wgpu.queue_write_texture (wgpu.device_get_default_queue istate.device)
+            # texture
+            &local wgpu.TextureCopyView
+                texture = handle
+                mip_level = 0
+                origin =
+                    wgpu.Origin3d 0 0 0
+
+            # data
+            imagedata.data
+            # data_length
+            countof imagedata.data
+            # data_layout
+            &local wgpu.TextureDataLayout
+                offset = 0
+                bytes_per_row = ((4 * imagedata.width) as u32)
+                rows_per_image = (imagedata.height as u32)
+            # size
+            &local wgpu.Extent3d
+                width = (imagedata.width as u32)
+                height = (imagedata.height as u32)
+                depth = 1 #?
+
+        super-type.__typecall cls
+            width = imagedata.width
+            height = imagedata.height
+            handle = handle
 
 struct Shader
     handle : (Option wgpu.ShaderModuleId)
@@ -283,6 +331,7 @@ do
         RenderPass
         Shader
         RenderPipeline
+        2DTexture
 
     backend := istate
 
