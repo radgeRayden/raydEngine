@@ -41,7 +41,7 @@ struct 2DTexture
                     sample_count = 1 # TODO: same
                     dimension = wgpu.TextureDimension.D2
                     format = wgpu.TextureFormat.Rgba8Unorm # TODO: different formats
-                    usage = wgpu.TextureUsage_COPY_DST
+                    usage = (wgpu.TextureUsage_COPY_DST | wgpu.TextureUsage_SAMPLED)
 
         wgpu.queue_write_texture (wgpu.device_get_default_queue istate.device)
             # texture
