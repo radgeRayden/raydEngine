@@ -26,4 +26,5 @@ let new-path =
 
 'set-symbol package 'path
     package.path .. new-path
-;
+
+(Scope) # require for use in REPL
