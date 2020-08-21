@@ -5,6 +5,7 @@
 using import struct
 using import enum
 using import Option
+using import Array
 using import radlib.core-extensions
 glfw := (import .foreign.glfw)
 let AppSettings = (import radlib.app-settings)
@@ -214,6 +215,15 @@ define-scope window
         ;
 
     unlet get-native-window-info
+
+    fn required-vulkan-extensions ()
+        local count : u32
+        let ext = (glfw.GetRequiredInstanceExtensions &count)
+
+        local ext-array : (Array string)
+        for i in (range count)
+            'append ext-array (string (ext @ i))
+        ext-array
 
     fn... monitor-size (monitor : (mutable pointer glfw.monitor) = null,)
         let monitor =
