@@ -13,3 +13,6 @@
 [submodule "foreign/src/wgpu-native"]
 	path = foreign/src/wgpu-native
 	url = https://github.com/gfx-rs/wgpu-native
+[submodule "foreign/src/volk"]
+	path = foreign/src/volk
+	url = https://github.com/zeux/volk
