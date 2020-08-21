@@ -74,14 +74,6 @@ define-scope window
     fn poll-events ()
         glfw.PollEvents;
 
-    # also known as the application main loop, tick updates go in the frame callback
-    # inline kickoff-event-cycle (frame-callback)
-    #     let window = (unwrap-window)
-    #     while (not (glfw.WindowShouldClose window))
-    #         glfw.PollEvents;
-    #         frame-callback;
-    #         glfw.SwapBuffers (unwrap-window)
-
     fn size ()
         local width : i32
         local height : i32
@@ -132,11 +124,6 @@ define-scope window
         else
             glfw.SwapInterval 1
         ;
-
-    # NOTE: seeing if I miss not exposing this function. I think we can just
-    # swap buffers after the frame callback.
-    # fn swap-buffers ()
-    #     glfw.SwapBuffers (unwrap-window)
 
     # FIXME: doesn't cover all window options, although they're all covered
     # in specific functions.
