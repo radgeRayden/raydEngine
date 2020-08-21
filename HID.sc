@@ -220,9 +220,9 @@ define-scope window
         local count : u32
         let ext = (glfw.GetRequiredInstanceExtensions &count)
 
-        local ext-array : (Array string)
+        local ext-array : (Array rawstring)
         for i in (range count)
-            'append ext-array (string (ext @ i))
+            'append ext-array (ext @ i)
         ext-array
 
     fn... monitor-size (monitor : (mutable pointer glfw.monitor) = null,)
