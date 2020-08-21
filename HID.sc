@@ -165,29 +165,68 @@ define-scope window
         current-window-options = window-options
         ;
 
-    fn... create-wgpu-surface (window = none,)
-        let window = (window or (unwrap-window))
-        let wgpu = (import .foreign.wgpu-native)
+    fn get-native-window-info (window)
         static-match operating-system
         case 'linux
             let GetX11Display =
-                extern 'glfwGetX11Display (function voidstar)
+                extern 'glfwGetX11Display (function (mutable@ voidstar))
             let GetX11Window =
-                extern 'glfwGetX11Window (function u64 (mutable pointer glfw.window))
-            let x11-display = (GetX11Display)
-            let x11-window = (GetX11Window window)
-            wgpu.create_surface_from_xlib (x11-display as (mutable pointer voidstar)) x11-window
+                extern 'glfwGetX11Window (function u64 (mutable@ glfw.window))
+            _ (GetX11Display) (GetX11Window window)
         case 'windows
-            let GetWin32Window =
-                extern 'glfwGetWin32Window (function voidstar (mutable pointer glfw.window))
             let GetModuleHandleA =
                 extern 'GetModuleHandleA (function voidstar voidstar)
+            let GetWin32Window =
+                extern 'glfwGetWin32Window (function voidstar (mutable@ glfw.window))
+            _ (GetModuleHandleA null) (GetWin32Window window)
+        default
+            error "OS not supported"
 
-            let hwnd = (GetWin32Window window)
-            let hinstance = (GetModuleHandleA null)
+    fn... create-wgpu-surface (window = none,)
+        let window = (window or (unwrap-window))
+        let wgpu = (import .foreign.wgpu-native)
+
+        static-match operating-system
+        case 'linux
+            let x11-display x11-window = (get-native-window-info window)
+            wgpu.create_surface_from_xlib x11-display x11-window
+        case 'windows
+            let hinstance hwnd = (get-native-window-info window)
             wgpu.create_surface_from_windows_hwnd hinstance hwnd
         default
             error "OS not supported"
+
+    fn... create-vulkan-surface (instance, window = none)
+        let window = (window or (unwrap-window))
+        let vk = (import .foreign.volk)
+
+        static-match operating-system
+        case 'linux
+            let x11-display x11-window = (get-native-window-info window)
+            local result : vk.SurfaceKHR
+            vk.CreateXlibSurfaceKHR instance
+                &local vk.XlibSurfaceCreateInfoKHR
+                    sType = vk.VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR
+                    dpy = x11-display
+                    window = window
+                null
+                &result
+            result
+        case 'windows
+            let hinstance hwnd = (get-native-window-info window)
+            local result : vk.SurfaceKHR
+            vk.CreateWin32SurfaceKHR instance
+                &local vk.Win32SurfaceCreateInfoKHR
+                    sType = vk.VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR
+                    instance = hinstance
+                    hwnd = hwnd
+                null
+                &result
+        default
+            error "OS not supported"
+        ;
+
+    unlet get-native-window-info
 
     fn... monitor-size (monitor : (mutable pointer glfw.monitor) = null,)
         let monitor =
@@ -431,6 +470,7 @@ struct GLContextOptions plain
 enum GfxAPI
     OpenGL : GLContextOptions
     WebGPU
+    Vulkan
 
 fn set-callbacks ()
     let window-handle = (unwrap-window)
@@ -523,10 +563,8 @@ fn... init (window-config = (WindowOptions), context : GfxAPI)
         glfw.WindowHint glfw.GLFW_OPENGL_PROFILE glfw.GLFW_OPENGL_CORE_PROFILE
 
         glfw.WindowHint glfw.GLFW_SAMPLES 4
-    case WebGPU ()
-        glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_NO_API
     default
-        ;
+        glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_NO_API
 
     window-handle :=
         (glfw.CreateWindow window-config.width window-config.height window-config.title null null)
