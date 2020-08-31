@@ -49,6 +49,7 @@ struct WindowOptions plain
     visible?    : bool = true
     maximized?  : bool = false
     vsync?      : bool = true
+    resizable?  : bool = true
 
 global current-window-options : WindowOptions
 
@@ -129,8 +130,10 @@ define-scope window
     # FIXME: doesn't cover all window options, although they're all covered
     # in specific functions.
     fn configure (window-options)
-        opt := window-options
+        opt     := window-options
         old-opt := current-window-options
+        window  := (unwrap-window)
+
 
         let width height = opt.width opt.height
         # if we didn't check for fullscreen status, could end up changing monitor
@@ -149,6 +152,8 @@ define-scope window
             toggle-vsync;
 
         set-title opt.title
+
+        glfw.SetWindowAttrib window glfw.GLFW_RESIZABLE opt.resizable?
 
         current-window-options = window-options
         ;
