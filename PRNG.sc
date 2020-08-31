@@ -73,6 +73,20 @@ define-scope random
                 this-function self (diff as u64)
             # restore original range
             (lower-bound + (result as i64)) as inputT
+
+        spice choose (self ...)
+            let argc = ('argcount ...)
+            verify-count argc 2 -1
+            let sw = (sc_switch_new `(self [argc]))
+            for i in (range argc)
+                sc_switch_append_case sw `i (sc_getarg ... i)
+            sc_switch_append_default sw
+                spice-quote
+                    assert false "implementation error - value out of bounds"
+                    # appease the typechecker
+                    [(sc_getarg ... 0)]
+            sw
+
     # http://prng.di.unimi.it/splitmix64.c
     # used here to generate xoshiro256** state from a single 64-bit seed
     struct Splitmix64 < RandomNumberGenerator
