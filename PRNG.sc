@@ -44,9 +44,38 @@ define-scope random
         # that is bigger than range.
         (m >> 64) as u64
 
+    typedef RandomNumberGenerator < CStruct
+        fn normalized (self)
+            normalize (self)
+
+        fn... __call
+        case (self)
+            'next self
+        # in cases with range params, for ease of use we're gonna output the same type as inputs.
+        # In the case of floats, the fractional part is discarded via casting.
+        case (self, upper-bound,)
+            assert (upper-bound > 0)
+            let result =
+                bounded-random self (upper-bound as u64)
+            result as (typeof upper-bound)
+        case (self, lower-bound, upper-bound,)
+            inputT := (typeof lower-bound)
+            # guarantee both inputs are of same type or equivalent
+            imply upper-bound inputT
+            assert (upper-bound > lower-bound)
+
+            # lose fractional part if present, use signed because bounds can be negative
+            lower-bound as:= i64
+            upper-bound as:= i64
+            # offset the range to zero - diff is always positive
+            let diff = (upper-bound - lower-bound)
+            let result =
+                this-function self (diff as u64)
+            # restore original range
+            (lower-bound + (result as i64)) as inputT
     # http://prng.di.unimi.it/splitmix64.c
     # used here to generate xoshiro256** state from a single 64-bit seed
-    struct Splitmix64 plain
+    struct Splitmix64 < RandomNumberGenerator
         _state : u64
         inline __typecall (cls seed)
             super-type.__typecall cls
@@ -61,7 +90,7 @@ define-scope random
             z ^ (z >> 31)
 
     # http://xoshiro.di.unimi.it/xoshiro256starstar.c
-    struct Xoshiro256** plain
+    struct Xoshiro256** < RandomNumberGenerator
         _state : (array u64 4)
         inline __typecall (cls seed)
             # as per the website recommendation
@@ -98,40 +127,8 @@ define-scope random
 
             result
 
-        fn normalized (self)
-            normalize (self)
-
-        inline... __call
-        case (self)
-            'next self
-        # in cases with range params, for ease of use we're gonna output the same type as inputs.
-        # In the case of floats, the fractional part is discarded via casting.
-        case (self, upper-bound,)
-            assert (upper-bound > 0)
-            let result =
-                bounded-random self (upper-bound as u64)
-            result as (typeof upper-bound)
-        case (self, lower-bound, upper-bound,)
-            inputT := (typeof lower-bound)
-            # guarantee both inputs are of same type or equivalent
-            imply upper-bound inputT
-            assert (upper-bound > lower-bound)
-
-            # lose fractional part if present, use signed because bounds can be negative
-            lower-bound as:= i64
-            upper-bound as:= i64
-            # offset the range to zero - diff is always positive
-            let diff = (upper-bound - lower-bound)
-            let result =
-                this-function self (diff as u64)
-            # restore original range
-            (lower-bound + (result as i64)) as inputT
-
     # default generator is xoshiro256**
     let RNG = Xoshiro256**
-
-# define-scope noise
-#     fn
 
 do
     let
