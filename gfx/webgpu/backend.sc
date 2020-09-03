@@ -5,7 +5,7 @@ using import enum
 using import glm
 
 using import radlib.core-extensions
-let wgpu = (import foreign.wgpu-native)
+let wgpu = (import .wrapper)
 let AppSettings = (import radlib.app-settings)
 import HID
 
@@ -13,10 +13,10 @@ import HID
 enum ResourceRequestError
     TryAgainLater
 
-struct GfxState plain
-    surface : wgpu.SurfaceId
-    adapter : wgpu.AdapterId
-    device : wgpu.DeviceId
+struct GfxState
+    surface : (Option wgpu.SurfaceId)
+    adapter : (Option wgpu.AdapterId)
+    device : (Option wgpu.DeviceId)
     swap-chain : wgpu.SwapChainId
     queue : wgpu.QueueId
 
@@ -274,11 +274,13 @@ fn... init ()
 
     # device configuration
     # =====================
+    # TODO: store this where I can read it?
+    local limits = (wgpu.adapter_limits adapter)
     let device =
         wgpu.adapter_request_device adapter
             0 # extensions
-            &local wgpu.CLimits
-                max_bind_groups = wgpu.DEFAULT_BIND_GROUPS
+            &limits
+            false # no shader validation - scopes already does it
             null
 
     istate.surface = surface
