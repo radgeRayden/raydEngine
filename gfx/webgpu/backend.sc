@@ -7,6 +7,7 @@ using import glm
 using import radlib.core-extensions
 let wgpu = (import foreign.wgpu-native)
 let AppSettings = (import radlib.app-settings)
+import HID
 
 
 enum ResourceRequestError
