@@ -327,12 +327,17 @@ fn... screen-pass (cmd-encoder : CommandEncoder, clear-color : vec4)
 fn present ()
     wgpu.swap_chain_present istate.swap-chain
 
+fn set-clear-color (color)
+    let state = ('force-unwrap istate)
+    state.clear-color = color
+
 do
     let
         init
         update-render-area
         acquire-backbuffer
         screen-pass
+        set-clear-color
         present
 
         GfxState
