@@ -81,10 +81,7 @@ define-scope random
             for i in (range argc)
                 sc_switch_append_case sw `i (sc_getarg ... i)
             sc_switch_append_default sw
-                spice-quote
-                    assert false "implementation error - value out of bounds"
-                    # appease the typechecker
-                    [(sc_getarg ... 0)]
+                `(unreachable)
             sw
 
     # http://prng.di.unimi.it/splitmix64.c
