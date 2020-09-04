@@ -14,13 +14,15 @@ enum ResourceRequestError
     TryAgainLater
 
 struct GfxState
-    surface : (Option wgpu.SurfaceId)
-    adapter : (Option wgpu.AdapterId)
-    device : (Option wgpu.DeviceId)
+    surface : wgpu.SurfaceId
+    adapter : wgpu.AdapterId
+    device : wgpu.DeviceId
     swap-chain : wgpu.SwapChainId
     queue : wgpu.QueueId
+    clear-color : vec4
 
-global istate : GfxState
+global istate : (Option GfxState)
+global background-clear-color : vec4
 
 struct 2DTexture
     width : i32
@@ -230,8 +232,9 @@ struct RenderPass
 
 fn update-render-area ()
     let width height = (HID.window.size)
-    let device surface = ('force-unwrap istate.device) ('force-unwrap istate.surface)
-    istate.swap-chain =
+    let state = ('force-unwrap istate)
+    let device surface = state.device state.surface
+    state.swap-chain =
         wgpu.device_create_swap_chain device surface
             &local wgpu.SwapChainDescriptor
                 usage = wgpu.TextureUsage_OUTPUT_ATTACHMENT
@@ -283,12 +286,14 @@ fn... init ()
             false # no shader validation - scopes already does it
             null
 
-    istate.surface = surface
-    istate.adapter = adapter
-    istate.device = device
+    istate =
+        GfxState
+            surface = surface
+            adapter = adapter
+            device = device
+            queue = (wgpu.device_get_default_queue device)
     # creates and sets the swap chain
     update-render-area;
-    istate.queue = (wgpu.device_get_default_queue device)
     ;
 
 fn acquire-backbuffer ()
