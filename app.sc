@@ -12,14 +12,17 @@ fn... run (init : InitCallback, update : UpdateCallback, draw : DrawCallback)
     filesystem.init;
     # TODO: check config.sc
     HID.init (HID.WindowOptions (visible? = true)) (HID.GfxAPI.WebGPU)
-    HID.on-key-event =
-        fn "key-callback" (ev)
-            using HID.keyboard
-            if (keybind ev KeyModifier.ALT KeyCode.ENTER)
-                HID.window.toggle-fullscreen;
 
-            if (keybind ev KeyCode.ESCAPE)
-                HID.window.close;
+    vvv mutate HID.on-key-event
+    fn "key-callback" (ev)
+        # code here...
+        using HID.keyboard
+        if (keybind ev KeyModifier.ALT KeyCode.ENTER)
+            HID.window.toggle-fullscreen;
+
+        if (keybind ev KeyCode.ESCAPE)
+            HID.window.close;
+
     gfx.init;
     # TODO: some sort of "begin frame" thing from gfx, which will request the swapchain image?
 
