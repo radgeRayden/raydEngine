@@ -89,6 +89,8 @@ define-scope window
         _ width height
 
     fn set-size (width height)
+        width as:= i32
+        height as:= i32
         glfw.SetWindowSize (unwrap-window) width height
         ;
 
