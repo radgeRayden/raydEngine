@@ -54,6 +54,7 @@ let constructors =
         constructor-info handle-types.BufferId 'device_create_buffer
         constructor-info handle-types.CommandEncoderId 'device_create_command_encoder
         constructor-info handle-types.ComputePipelineId 'device_create_compute_pipeline
+        constructor-info handle-types.DeviceId 'adapter_request_device
         constructor-info handle-types.PipelineLayoutId 'device_create_pipeline_layout
         constructor-info handle-types.RenderPipelineId 'device_create_render_pipeline
         constructor-info handle-types.SamplerId 'device_create_sampler
@@ -68,6 +69,7 @@ run-stage;
 do
     using wgpu
     using handle-types
+    using constructors
 
     inline... render_pass_end_pass (id : RenderPassId,)
         wgpu.render_pass_end_pass id
