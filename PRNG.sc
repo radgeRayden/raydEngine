@@ -1,6 +1,22 @@
 using import struct
 using import radlib.core-extensions
 
+inline rotl(x amount)
+    imply x u64
+    imply amount i32
+    (x << amount) | (x >> (64 - amount))
+
+inline seed256 (seederT seed)
+    # as per the xoshiro readme recommendation
+    local seeder = (seederT seed)
+
+    local state =
+        arrayof u64
+            'next seeder
+            'next seeder
+            'next seeder
+            'next seeder
+
 define-scope random
     # http://prng.di.unimi.it/
     # "Generating uniform doubles in the unit interval"
@@ -104,28 +120,39 @@ define-scope random
     struct Xoshiro256** < RandomNumberGenerator
         _state : (array u64 4)
         inline __typecall (cls seed)
-            # as per the website recommendation
-            local seeder = (Splitmix64 seed)
-
-            local state =
-                arrayof u64
-                    'next seeder
-                    'next seeder
-                    'next seeder
-                    'next seeder
             super-type.__typecall cls
-                _state = state
+                _state = (seed256 Splitmix64 seed)
 
         fn next (self)
-            inline rotl(x amount)
-                imply x u64
-                imply amount i32
-                (x << amount) | (x >> (64 - amount))
-
             let result = ((rotl ((self._state @ 1) * 5) 7) * 9)
 
             # now advance to the next state on the generator
             s := self._state
+            t := ((s @ 1) << 17)
+            s @ 2 ^= (s @ 0)
+            s @ 3 ^= (s @ 1)
+            s @ 1 ^= (s @ 2)
+            s @ 0 ^= (s @ 3)
+
+            s @ 2 ^= t
+
+            s @ 3 = (rotl (s @ 3) 45)
+
+            result
+
+    # http://prng.di.unimi.it/xoshiro256plus.c
+    # More well suited for FP number generation.
+    struct Xoshiro256+ < RandomNumberGenerator
+        _state : (array u64 4)
+        inline __typecall (cls seed)
+            super-type.__typecall cls
+                _state = (seed256 Splitmix64 seed)
+
+        fn next (self)
+            s := self._state
+            result := (s @ 0) + (s @ 3)
+
+            # now advance to the next state on the generator
             t := ((s @ 1) << 17)
             s @ 2 ^= (s @ 0)
             s @ 3 ^= (s @ 1)
