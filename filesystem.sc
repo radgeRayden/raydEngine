@@ -1,8 +1,15 @@
+using import radlib.core-extensions
+
 physfs := (import .foreign.physfs)
 
 using import struct
 using import property
 using import Array
+
+fn last-error ()
+    let code = (physfs.getLastErrorCode)
+    let message = (physfs.getErrorByCode code)
+    string message
 
 struct FileData
     data : (Array u8)
@@ -26,14 +33,28 @@ fn init ()
     if (not (physfs.init (argv @ 0)))
         error "Failed to initialize PHYSFS."
     physfs.mount "." "/" true
+    physfs.setWriteDir "."
     # TODO: no clean up?
     print "filesystem module initialized."
+
+fn write (data filepath)
+    let handle = (physfs.openWrite filepath)
+    if (handle == null)
+        hide-traceback;
+        error@ ('anchor `filepath) "while trying to write a file" (last-error)
+    let len = (Array-sizeof data)
+    let written =
+        (physfs.writeBytes handle ((imply data pointer) as voidstar) len) as usize
+    if (written != len)
+        # FIXME: this should be better.
+        error "incomplete write"
+    ;
 
 fn _load (filepath)
     let file = (physfs.openRead filepath)
     if (file == null)
         hide-traceback;
-        error@ ('anchor `file) "while trying to open a file" (physfs.last-error)
+        error@ ('anchor `file) "while trying to open a file" (last-error)
 
     local filedata =
         FileData
@@ -51,7 +72,7 @@ fn _load (filepath)
         if (physfs.eof file)
             error "Unexpected end of file."
         else
-            error@ ('anchor `read) "while loading file into memory" ("PHYSFS: " .. (physfs.last-error))
+            error@ ('anchor `read) "while loading file into memory" ("PHYSFS: " .. (last-error))
 
     filedata
 
@@ -70,6 +91,7 @@ do
     load := _load
     let
         init
+        write
         list-directory
         FileData
     locals;
