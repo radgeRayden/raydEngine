@@ -32,49 +32,20 @@ fn... run ()
 
     # call user defined init after initializing modules
     init;
-
-    inline wrap-draw (f)
-        let state = ('force-unwrap gfx.backend)
-        let device = state.device
-        let cmd-encoder = (wgpu.device_create_command_encoder device null)
-        let swapchain-image =
-            wgpu.swap_chain_get_next_texture state.swap-chain
-        if (swapchain-image.view_id == 0)
-            gfx.update-render-area;
-            return;
-
-        let render-pass =
-            wgpu.command_encoder_begin_render_pass cmd-encoder
-                &local wgpu.RenderPassDescriptor
-                    color_attachments =
-                        &local wgpu.RenderPassColorAttachmentDescriptor
-                            attachment = swapchain-image.view_id
-                            channel =
-                                typeinit
-                                    load_op = wgpu.LoadOp.Clear
-                                    store_op = wgpu.StoreOp.Store
-                                    clear_value = (wgpu.Color (unpack state.clear-color))
-                    color_attachments_length = 1
-
-        f (view cmd-encoder) (view render-pass)
-
-        wgpu.render_pass_end_pass render-pass
-        local cmdbuf = (wgpu.command_encoder_finish cmd-encoder null)
-        wgpu.queue_submit state.queue cmdbuf
-        wgpu.swap_chain_present state.swap-chain
-
-    HID.window.poll-events;
-    # clear the screen once
-    gfx.update-render-area;
-    wrap-draw (inline (...) ())
     # reset timer to account for initialization time
     app-timer = (timer.Timer)
     while (not (HID.window.received-quit-event?))
         HID.window.poll-events;
-        # TODO: some sort of "begin frame" thing from gfx, which will request the swapchain image?
-        wrap-draw draw
         'step app-timer
         update ('delta-time app-timer)
+
+        let framebuffer =
+            try (gfx.request-framebuffer)
+            else (continue)
+
+        draw framebuffer
+        'finish framebuffer
+        gfx.present;
     ;
 
 do
