@@ -1,4 +1,5 @@
 using import radlib.core-extensions
+using import FunctionChain
 
 import .use
 import HID
@@ -11,25 +12,24 @@ fnchain update
 fnchain draw
 fnchain init
 
-'append init
-    fn ()
-        filesystem.init;
-        # TODO: check config.sc
-        HID.init (HID.WindowOptions (visible? = true)) (HID.GfxAPI.WebGPU)
-
-        vvv mutate HID.on-key-event
-        fn "key-callback" (ev)
-            # code here...
-            using HID.keyboard
-            if (keybind ev KeyModifier.ALT KeyCode.ENTER)
-                HID.window.toggle-fullscreen;
-
-            if (keybind ev KeyCode.ESCAPE)
-                HID.window.close;
-
-        gfx.init;
-
 fn... run ()
+    filesystem.init;
+    # TODO: check config.sc
+    HID.init (HID.WindowOptions (visible? = true)) (HID.GfxAPI.WebGPU)
+
+    vvv mutate HID.on-key-event
+    fn "key-callback" (ev)
+        # code here...
+        using HID.keyboard
+        if (keybind ev KeyModifier.ALT KeyCode.ENTER)
+            HID.window.toggle-fullscreen;
+
+        if (keybind ev KeyCode.ESCAPE)
+            HID.window.close;
+
+    gfx.init;
+
+    # call user defined init after initializing modules
     init;
 
     inline wrap-draw (f)
@@ -48,9 +48,11 @@ fn... run ()
                     color_attachments =
                         &local wgpu.RenderPassColorAttachmentDescriptor
                             attachment = swapchain-image.view_id
-                            load_op = wgpu.LoadOp.Clear
-                            store_op = wgpu.StoreOp.Store
-                            clear_color = (wgpu.Color (unpack state.clear-color))
+                            channel =
+                                typeinit
+                                    load_op = wgpu.LoadOp.Clear
+                                    store_op = wgpu.StoreOp.Store
+                                    clear_value = (wgpu.Color (unpack state.clear-color))
                     color_attachments_length = 1
 
         f (view cmd-encoder) (view render-pass)

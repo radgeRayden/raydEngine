@@ -191,7 +191,7 @@ struct CommandEncoder
             ;
 
 struct RenderPass
-    handle : (Option wgpu.RenderPassId)
+    handle : (Option wgpu.RenderPass)
     color-attachments : (Array wgpu.RenderPassColorAttachmentDescriptor)
     depth-attachment  : (Option wgpu.RenderPassDepthStencilAttachmentDescriptor)
 

@@ -1,5 +1,11 @@
+spice opaque? (T)
+    T as:= type
+    let opaque? = ('opaque? T)
+    `opaque?
+run-stage;
+
 using import radlib.core-extensions
-let wgpu = (import foreign.wgpu-native)
+let wgpu = (import ...foreign.wgpu-native)
 
 inline typeinfo (sym dropf)
     do
@@ -12,7 +18,13 @@ let handle-types =
     va-lfold (Scope)
         inline (__ info scope)
             let T = (getattr wgpu info.typesym)
-            let handleT = (make-handle-type info.typesym (storageof T) info.dropf)
+            let handleT =
+                make-handle-type info.typesym
+                    static-if (opaque? T)
+                        (mutable pointer T)
+                    else
+                        (storageof T)
+                    info.dropf
             'bind scope info.typesym handleT
         typeinfo 'AdapterId wgpu.adapter_destroy
         typeinfo 'BindGroupId wgpu.bind_group_destroy
@@ -24,8 +36,8 @@ let handle-types =
         typeinfo 'PipelineLayoutId wgpu.pipeline_layout_destroy
         typeinfo 'RenderPipelineId wgpu.render_pipeline_destroy
         typeinfo 'ComputePipelineId wgpu.compute_pipeline_destroy
-        typeinfo 'RenderPassId wgpu.render_pass_destroy
-        typeinfo 'ComputePassId wgpu.compute_pass_destroy
+        typeinfo 'RenderPass wgpu.render_pass_destroy
+        typeinfo 'ComputePass wgpu.compute_pass_destroy
         typeinfo 'SamplerId wgpu.sampler_destroy
         typeinfo 'ShaderModuleId wgpu.shader_module_destroy
         typeinfo 'TextureId wgpu.shader_module_destroy wgpu.texture_destroy
@@ -61,8 +73,8 @@ let constructors =
         constructor-info handle-types.ShaderModuleId 'device_create_shader_module
         constructor-info handle-types.TextureId 'device_create_texture
         constructor-info handle-types.TextureViewId 'texture_create_view
-        constructor-info handle-types.RenderPassId 'command_encoder_begin_render_pass
-        constructor-info handle-types.ComputePassId 'command_encoder_begin_compute_pass
+        constructor-info handle-types.RenderPass 'command_encoder_begin_render_pass
+        constructor-info handle-types.ComputePass 'command_encoder_begin_compute_pass
 
 run-stage;
 
@@ -71,11 +83,11 @@ do
     using handle-types
     using constructors
 
-    inline... render_pass_end_pass (id : RenderPassId,)
+    inline... render_pass_end_pass (id : RenderPass,)
         wgpu.render_pass_end_pass id
         lose id
 
-    inline... compute_pass_end_pass (id : ComputePassId,)
+    inline... compute_pass_end_pass (id : ComputePass,)
         wgpu.compute_pass_end_pass id
         lose id
 

@@ -34,12 +34,12 @@ define-scope wgpu-native
                 WGPUColorWrite_COLOR
                 WGPUColorWrite_ALL
 
-                WGPUExtensions_ANISOTROPIC_FILTERING
-                WGPUExtensions_MAPPABLE_PRIMARY_BUFFERS
-                WGPUExtensions_TEXTURE_BINDING_ARRAY
-                WGPUExtensions_ALL_WEBGPU
-                WGPUExtensions_ALL_UNSAFE
-                WGPUExtensions_ALL_NATIVE
+                # WGPUFeatures_ANISOTROPIC_FILTERING
+                WGPUFeatures_MAPPABLE_PRIMARY_BUFFERS
+                # WGPUFeatures_TEXTURE_BINDING_ARRAY
+                WGPUFeatures_ALL_WEBGPU
+                WGPUFeatures_ALL_UNSAFE
+                WGPUFeatures_ALL_NATIVE
 
                 WGPUColor_TRANSPARENT
                 WGPUColor_BLACK
