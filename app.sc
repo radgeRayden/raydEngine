@@ -7,31 +7,32 @@ import filesystem
 let gfx = (import gfx.webgpu.backend) # TODO: use the high level API?
 let wgpu = (import gfx.webgpu.wrapper)
 
-let UpdateCallback = (pointer (function void f64))
-let DrawCallback = (pointer (function void (viewof wgpu.CommandEncoderId 1) (viewof wgpu.RenderPassId 1)))
-let InitCallback = (pointer (function void))
+fnchain update
+fnchain draw
+fnchain init
 
-fn... run (init : InitCallback, update : UpdateCallback, user-draw : DrawCallback)
-    filesystem.init;
-    # TODO: check config.sc
-    HID.init (HID.WindowOptions (visible? = true)) (HID.GfxAPI.WebGPU)
+'append init
+    fn ()
+        filesystem.init;
+        # TODO: check config.sc
+        HID.init (HID.WindowOptions (visible? = true)) (HID.GfxAPI.WebGPU)
 
-    vvv mutate HID.on-key-event
-    fn "key-callback" (ev)
-        # code here...
-        using HID.keyboard
-        if (keybind ev KeyModifier.ALT KeyCode.ENTER)
-            HID.window.toggle-fullscreen;
+        vvv mutate HID.on-key-event
+        fn "key-callback" (ev)
+            # code here...
+            using HID.keyboard
+            if (keybind ev KeyModifier.ALT KeyCode.ENTER)
+                HID.window.toggle-fullscreen;
 
-        if (keybind ev KeyCode.ESCAPE)
-            HID.window.close;
+            if (keybind ev KeyCode.ESCAPE)
+                HID.window.close;
 
-    gfx.init;
+        gfx.init;
 
-    # after we loaded the necessary modules, it's safe to call user defined init
+fn... run ()
     init;
 
-    inline draw (f)
+    inline wrap-draw (f)
         let state = ('force-unwrap gfx.backend)
         let device = state.device
         let cmd-encoder = (wgpu.device_create_command_encoder device null)
@@ -62,11 +63,11 @@ fn... run (init : InitCallback, update : UpdateCallback, user-draw : DrawCallbac
     HID.window.poll-events;
     # clear the screen once
     gfx.update-render-area;
-    draw (inline (...) ())
+    wrap-draw (inline (...) ())
     while (not (HID.window.received-quit-event?))
         HID.window.poll-events;
         update 0
         # TODO: some sort of "begin frame" thing from gfx, which will request the swapchain image?
-        draw user-draw;
+        wrap-draw draw
     ;
 locals;
