@@ -5,9 +5,9 @@ using import enum
 using import glm
 
 using import radlib.core-extensions
-let wgpu = (import .wrapper)
 let AppSettings = (import radlib.app-settings)
-import HID
+let wgpu = (import .wrapper)
+import ...HID
 
 
 enum ResourceRequestError
