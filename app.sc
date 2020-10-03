@@ -71,4 +71,11 @@ fn... run ()
         # TODO: some sort of "begin frame" thing from gfx, which will request the swapchain image?
         wrap-draw draw
     ;
-locals;
+
+do
+    let
+        update
+        draw
+        init
+        run
+    locals;
