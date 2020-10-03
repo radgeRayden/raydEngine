@@ -535,7 +535,7 @@ typedef HIDLifetimeCookie :: (storageof Nothing)
     inline __typecall (cls)
         bitcast none this-type
     inline __drop (self)
-        print "Shutting down GLFW"
+        print "Shutting down HID module"
         glfw.DestroyWindow ('force-unwrap app-window)
         app-window = none
         # glfw.Terminate;
