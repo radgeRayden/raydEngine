@@ -1,11 +1,10 @@
 using import radlib.core-extensions
 using import FunctionChain
 
-import .use
-import HID
-import timer
-import filesystem
-let gfx = (import gfx.webgpu.backend) # TODO: use the high level API?
+import .HID
+import .timer
+import .filesystem
+import .gfx
 let wgpu = (import gfx.webgpu.wrapper)
 
 fnchain update
