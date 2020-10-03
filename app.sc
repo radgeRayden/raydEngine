@@ -7,6 +7,8 @@ import .filesystem
 import .gfx
 let wgpu = (import gfx.webgpu.wrapper)
 
+global app-timer : timer.Timer
+
 fnchain update
 fnchain draw
 fnchain init
@@ -65,11 +67,14 @@ fn... run ()
     # clear the screen once
     gfx.update-render-area;
     wrap-draw (inline (...) ())
+    # reset timer to account for initialization time
+    app-timer = (timer.Timer)
     while (not (HID.window.received-quit-event?))
         HID.window.poll-events;
-        update 0
         # TODO: some sort of "begin frame" thing from gfx, which will request the swapchain image?
         wrap-draw draw
+        'step app-timer
+        update ('delta-time app-timer)
     ;
 
 do
