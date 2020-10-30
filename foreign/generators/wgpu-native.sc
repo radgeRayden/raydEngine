@@ -1,4 +1,3 @@
-using import radlib.stringtools
 using import radlib.foreign
 let bindgen = (import .scopes-binding-generator.gensc)
 
