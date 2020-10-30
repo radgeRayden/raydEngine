@@ -11,4 +11,5 @@ do
         init
         request-framebuffer
         present
+        set-clear-color
     locals;

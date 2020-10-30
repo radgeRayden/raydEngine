@@ -133,9 +133,17 @@ fn present ()
         #???
         ;
 
+fn set-clear-color (color)
+    try
+        let state = ('unwrap istate)
+        state.clear-color = color
+    else
+        error "gfx module not initialized"
+
 do
     let
         init
         request-framebuffer
+        set-clear-color
         present
     locals;
