@@ -5,7 +5,7 @@ import .HID
 import .timer
 import .filesystem
 import .gfx
-let wgpu = (import .foreign.wgpu-native)
+let wgpu = (import .gfx.webgpu.wrapper)
 
 global app-timer : timer.Timer
 

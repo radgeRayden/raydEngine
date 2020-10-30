@@ -6,7 +6,7 @@ using import glm
 using import String
 using import enum
 
-let wgpu = (import ...foreign.wgpu-native)
+let wgpu = (import .wrapper)
 import ...HID
 
 struct GfxState
