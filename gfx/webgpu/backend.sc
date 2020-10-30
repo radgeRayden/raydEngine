@@ -75,8 +75,8 @@ fn init ()
             surface = surface
             adapter = adapter
             device = device
-            queue = (wgpu.device_get_default_queue device)
-            swap-chain = (create-swap-chain device surface)
+            queue = (wgpu.device_get_default_queue (storagecast (view device)))
+            swap-chain = (create-swap-chain (storagecast (view device)) surface)
 
 typedef+ wgpu.RenderPass
     fn finish (self)
@@ -103,7 +103,7 @@ fn request-framebuffer ()
         raise FrameError.SwapChainOutdated
 
     let render-pass =
-        wgpu.command_encoder_begin_render_pass cmd-encoder
+        wgpu.command_encoder_begin_render_pass (storagecast (view cmd-encoder))
             &local wgpu.RenderPassDescriptor
                 color_attachments =
                     &local wgpu.RenderPassColorAttachmentDescriptor

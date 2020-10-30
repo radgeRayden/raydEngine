@@ -94,11 +94,9 @@ do
     inline queue_submit (queue command-buffer)
         local cmdbuf : wgpu.CommandBufferId = command-buffer
         wgpu.queue_submit queue &cmdbuf 1
-        lose command-buffer
 
     inline command_encoder_finish (id desc)
         let handle = (wgpu.command_encoder_finish id desc)
-        lose id
         handle as CommandBufferId
 
     locals;
