@@ -115,7 +115,6 @@ define-scope window
         if (not opt.fullscreen?)
             opt.fullscreen? = true
             video-mode := (glfw.GetVideoMode monitor)
-            dump glfw.GLFW_DONT_CARE
             glfw.SetWindowMonitor window monitor 0 0 video-mode.width video-mode.height (glfw.GLFW_DONT_CARE as i32)
         else
             opt.fullscreen? = false
