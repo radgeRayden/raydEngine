@@ -6,7 +6,7 @@ import HID
 import timer
 import filesystem
 let gfx = (import gfx.webgpu.backend) # TODO: use the high level API?
-let wgpu = (import gfx.webgpu.wrapper)
+let wgpu = (import foreign.wgpu-native)
 
 fnchain update
 fnchain draw
@@ -55,11 +55,11 @@ fn... run ()
                                     clear_value = (wgpu.Color (unpack state.clear-color))
                     color_attachments_length = 1
 
-        f (view cmd-encoder) (view render-pass)
+        f (view render-pass)
 
         wgpu.render_pass_end_pass render-pass
         local cmdbuf = (wgpu.command_encoder_finish cmd-encoder null)
-        wgpu.queue_submit state.queue cmdbuf
+        wgpu.queue_submit state.queue &cmdbuf 1
         wgpu.swap_chain_present state.swap-chain
 
     HID.window.poll-events;

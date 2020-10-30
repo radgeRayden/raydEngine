@@ -6,7 +6,7 @@ using import glm
 
 using import radlib.core-extensions
 let AppSettings = (import radlib.app-settings)
-let wgpu = (import .wrapper)
+let wgpu = (import ...foreign.wgpu-native)
 import ...HID
 
 
@@ -191,7 +191,7 @@ struct CommandEncoder
             ;
 
 struct RenderPass
-    handle : (Option wgpu.RenderPass)
+    handle : (Option (@ wgpu.RenderPass))
     color-attachments : (Array wgpu.RenderPassColorAttachmentDescriptor)
     depth-attachment  : (Option wgpu.RenderPassDepthStencilAttachmentDescriptor)
 
@@ -246,14 +246,14 @@ fn update-render-area ()
 
 fn... init ()
     wgpu.set_log_level wgpu.LogLevel.Error
-    wgpu.set_log_callback
-        fn "gfx-log" (level msg)
-            static-if AppSettings.AOT?
-                using import radlib.libc
-                stdio.printf "level: %d - %s\n" level msg
-                ;
-            else
-                print "level:" level "-" (string msg)
+    fn gfx-log (level msg)
+        static-if AppSettings.AOT?
+            using import radlib.libc
+            stdio.printf "level: %d - %s\n" level msg
+            ;
+        else
+            print "level:" level "-" (string (storagecast msg))
+    wgpu.set_log_callback (gfx-log as (storageof wgpu.LogCallback))
 
     let surface = (HID.window.create-wgpu-surface)
 
@@ -267,12 +267,14 @@ fn... init ()
         | 2 4 8
         false
         # callback
-        fn "on-adapter-available" (result adapterptr)
-            # adapter = result
-            # let statusptr = (bitcast statusptr (mutable pointer bool))
-            adapterptr as:= (mutable pointer u64)
-            @adapterptr = result
-            ;
+        as
+            fn "on-adapter-available" (result adapterptr)
+                # adapter = result
+                # let statusptr = (bitcast statusptr (mutable pointer bool))
+                adapterptr as:= (mutable pointer u64)
+                @adapterptr = result
+                ;
+            storageof wgpu.RequestAdapterCallback
         &adapter
 
     # device configuration
