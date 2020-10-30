@@ -57,6 +57,7 @@ fn init ()
             adapterptr as:= (mutable pointer u64)
             @adapterptr = result
             ;
+
         &adapter
 
     # device configuration
