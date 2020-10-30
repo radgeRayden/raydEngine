@@ -16,3 +16,6 @@
 [submodule "foreign/src/volk"]
 	path = foreign/src/volk
 	url = https://github.com/zeux/volk
+[submodule "foreign/generators/scopes-binding-generator"]
+	path = foreign/generators/scopes-binding-generator
+	url = git@github.com:radgeRayden/scopes-binding-generator.git

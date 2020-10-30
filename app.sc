@@ -5,7 +5,7 @@ import .HID
 import .timer
 import .filesystem
 import .gfx
-let wgpu = (import gfx.webgpu.wrapper)
+let wgpu = (import foreign.wgpu-native)
 
 global app-timer : timer.Timer
 
@@ -32,8 +32,10 @@ fn... run ()
 
     # call user defined init after initializing modules
     init;
+
     # reset timer to account for initialization time
     app-timer = (timer.Timer)
+
     while (not (HID.window.received-quit-event?))
         HID.window.poll-events;
         'step app-timer
