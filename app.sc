@@ -1,5 +1,6 @@
 using import radlib.core-extensions
 using import FunctionChain
+using import glm
 
 import .HID
 import .timer
@@ -8,6 +9,7 @@ import .gfx
 let wgpu = (import .gfx.webgpu.wrapper)
 
 global app-timer : timer.Timer
+global bg-color : vec4 1 1 1 1
 
 fnchain update
 fnchain draw
@@ -42,7 +44,7 @@ fn... run ()
         update ('delta-time app-timer)
 
         let framebuffer =
-            try (gfx.request-framebuffer)
+            try (gfx.request-framebuffer bg-color)
             else (continue)
 
         draw framebuffer
@@ -50,10 +52,14 @@ fn... run ()
         gfx.present;
     ;
 
+fn set-background-color (c)
+    bg-color = c
+
 do
     let
         update
         draw
         init
         run
+        set-background-color
     locals;

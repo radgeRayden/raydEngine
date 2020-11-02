@@ -18,8 +18,6 @@ struct GfxState
     queue : wgpu.QueueId
     command-encoder : (Option wgpu.CommandEncoderId)
 
-    # application state
-    clear-color = (vec4 1 1 1 1)
 
 global istate : (Option GfxState)
 
@@ -87,7 +85,7 @@ enum FrameError plain
     SwapChainOutdated
     LeftOverFrame
 
-fn request-framebuffer ()
+fn request-framebuffer (clear-color)
     let state = ('force-unwrap istate)
     let device = state.device
     let surface = state.surface
@@ -113,7 +111,7 @@ fn request-framebuffer ()
                             typeinit
                                 load_op = wgpu.LoadOp.Clear
                                 store_op = wgpu.StoreOp.Store
-                                clear_value = (wgpu.Color (unpack state.clear-color))
+                                clear_value = (wgpu.Color (unpack clear-color))
                 color_attachments_length = 1
 
     state.command-encoder = cmd-encoder
