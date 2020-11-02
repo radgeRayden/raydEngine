@@ -24,6 +24,13 @@ inline struct-hash-fields (self)
             hash computed current
         (tail)
 
+# NOTE:
+# Pipelines and their dependencies are cached, and checked by hash of their descriptors. We
+# use our own version of the descriptors to have correct lifetime handling.
+# Caches use the hash type to index the map to avoid lifetime problems with duplicate
+# copies.
+# At the moment, these caches are not thread safe. Thread safety could be achieved by putting
+# a mutex over the access of the global caches.
 struct BindGroupLayoutBlueprint
 
     let __== struct-equality-by-field
@@ -69,8 +76,6 @@ struct RenderPipelineBlueprint
     let __hash = struct-hash-fields
 
     fn flush (self device)
-        # we use hash for the cache to avoid lifetime problems with duplicate
-        # copies.
         try
             wgpu.render_pass_set_pipeline render-pass
                 view ('get pipeline-cache (hash self))
