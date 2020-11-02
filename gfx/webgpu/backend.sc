@@ -36,7 +36,10 @@ struct PipelineLayoutBlueprint
     bind-group-layouts : (Map usize BindGroupLayoutBluePrint) # slot -> bind group
 
     let __== struct-equality-by-field
-    let __hash = struct-hash-fields
+    inline __hash (self)
+        fold (h = (hash 0)) for k v in self.bind-group-layouts
+            hash h
+                hash k v
 
     fn flush (self)
         ;
