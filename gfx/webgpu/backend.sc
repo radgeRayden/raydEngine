@@ -32,8 +32,12 @@ struct BindGroupLayoutBlueprint
     fn flush (self)
         ;
 
+    fn clear-cache ()
+
 struct PipelineLayoutBlueprint
     bind-group-layouts : (Map usize BindGroupLayoutBluePrint) # slot -> bind group
+
+    global pipeline-layout-cache : (Map hash wgpu.PipelineLayoutId)
 
     let __== struct-equality-by-field
     inline __hash (self)
@@ -42,7 +46,9 @@ struct PipelineLayoutBlueprint
                 hash k v
 
     fn flush (self)
-        ;
+
+    fn clear-cache ()
+        'clear pipeline-layout-cache
 
 struct RenderPipelineBlueprint
     layout : PipelineLayoutBlueprint
@@ -57,13 +63,14 @@ struct RenderPipelineBlueprint
     sample-mask : u32 = 0xffffffff
     alpha-to-coverage-enabled : bool
 
+    global pipeline-cache : (Map hash wgpu.RenderPipelineId)
+
     let __== struct-equality-by-field
     let __hash = struct-hash-fields
 
     fn flush (self device)
         # we use hash for the cache to avoid lifetime problems with duplicate
         # copies.
-        global pipeline-cache : (Map hash wgpu.RenderPipelineId)
         try
             wgpu.render_pass_set_pipeline render-pass
                 view ('get pipeline-cache (hash self))
@@ -100,6 +107,9 @@ struct RenderPipelineBlueprint
                     &local desc
             'set state.pipeline-cache (hash self) new-pip
             view new-pip
+
+    fn clear-cache ()
+        'clear pipeline-cache
 
 struct GfxState
     # webgpu state
@@ -236,8 +246,13 @@ fn present ()
         ;
 
 fn reset-pipeline ()
+    """"Clears all cached pipelines and resets it to a default state. Can be used to
+        free VRAM when changing a level, for example.
     let state = ('force-unwrap istate)
-    state.current-pipeline = (default-pipeline-descriptor (view state.device))
+    RenderPipelineBlueprint.clear-cache;
+    RenderPipelineLayoutBlueprint.clear-cache;
+    BindGroupLayoutBluePrint.clear-cache;
+    # state.current-pipeline = (default-pipeline-descriptor (view state.device))
 
 fn... draw (render-pass, topology, vertex-count, instance-count = 0,
             first-vertex = 0, first-instance = 0)
