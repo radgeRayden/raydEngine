@@ -177,4 +177,5 @@ do
         request-framebuffer
         set-clear-color
         present
+        draw
     locals;

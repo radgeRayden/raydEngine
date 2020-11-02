@@ -12,4 +12,5 @@ do
         request-framebuffer
         present
         set-clear-color
+        draw
     locals;
