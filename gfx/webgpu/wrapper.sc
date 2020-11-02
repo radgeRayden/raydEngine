@@ -76,6 +76,12 @@ let constructors =
         constructor-info handle-types.RenderPass 'command_encoder_begin_render_pass
         constructor-info handle-types.ComputePass 'command_encoder_begin_compute_pass
 
+for k v in wgpu
+    if ((('typeof v) == type) and ((v as type) < CEnum))
+        'set-symbol (v as type) '__typecall
+            inline (cls)
+                bitcast 0 cls
+
 run-stage;
 
 let basic-struct-compare =
