@@ -52,6 +52,7 @@ fn... run ()
         gfx.present;
     ;
 
+# TODO: expose a high level gfx module through app?
 fn set-background-color (c)
     bg-color = c
 

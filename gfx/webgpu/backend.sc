@@ -5,6 +5,7 @@ using import Option
 using import glm
 using import String
 using import enum
+using import Map
 
 let wgpu = (import .wrapper)
 import ...HID
@@ -18,6 +19,11 @@ struct GfxState
     queue : wgpu.QueueId
     command-encoder : (Option wgpu.CommandEncoderId)
 
+    # pipeline JIT compilation
+    pipeline-cache : (Map wgpu.RenderPipelineDescriptor wgpu.RenderPipelineId)
+    # TODO: maybe it would be better to use our own descriptor object, to avoid
+    # lifetime problems with eg. strings.
+    current-pipeline : wgpu.RenderPipelineDescriptor
 
 global istate : (Option GfxState)
 
@@ -69,6 +75,16 @@ fn init ()
             false # no shader validation - scopes already does it
             null
 
+    # default pipeline
+    # ================
+    # TODO: fill this out with even more defaults
+    let defpip =
+        wgpu.RenderPipelineDescriptor
+            primitive_topology = wgpu.PrimitiveTopology.TriangleList
+            vertex_state =
+                typeinit
+                    index_format = wgpu.IndexFormat.Uint16
+
     istate =
         GfxState
             surface = surface
@@ -76,6 +92,7 @@ fn init ()
             device = device
             queue = (wgpu.device_get_default_queue (storagecast (view device)))
             swap-chain = (create-swap-chain (storagecast (view device)) surface)
+            current-pipeline = defpip
 
 typedef+ wgpu.RenderPass
     fn finish (self)
@@ -130,6 +147,22 @@ fn present ()
     else
         #???
         ;
+
+fn flush-pipeline (render-pass)
+    let state = ('force-unwrap istate)
+    try
+        wgpu.render_pass_set_pipeline render-pass
+            view ('get state.pipeline-cache state.current-pipeline)
+    else
+        let new-pip =
+            wgpu.device_create_render_pipeline state.device &state.current-pipeline
+        wgpu.render_pass_set_pipeline render-pass (view new-pip)
+        'set state.pipeline-cache (deref state.current-pipeline) new-pip
+
+fn... draw (render-pass, topology, vertex-count, instance-count = 0,
+            first-vertex = 0, first-instance = 0)
+    flush-pipeline render-pass
+    let state = ('force-unwrap istate)
 
 fn set-clear-color (color)
     try
