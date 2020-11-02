@@ -24,6 +24,8 @@ inline struct-hash-fields (self)
             hash computed current
         (tail)
 
+global wgpu-limits : wgpu.CLimits
+
 # NOTE:
 # Pipelines and their dependencies are cached, and checked by hash of their descriptors. We
 # use our own version of the descriptors to have correct lifetime handling.
@@ -168,12 +170,11 @@ fn init ()
 
     # device configuration
     # =====================
-    # TODO: store this where I can read it?
-    local limits = (wgpu.adapter_limits adapter)
+    wgpu-limits = (wgpu.adapter_limits adapter)
     let device =
         wgpu.adapter_request_device adapter
             0 # extensions
-            &limits
+            &wgpu-limits
             false # no shader validation - scopes already does it
             null
 
