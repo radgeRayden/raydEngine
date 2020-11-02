@@ -77,8 +77,7 @@ struct RenderPipelineBlueprint
 
     fn flush (self device)
         try
-            wgpu.render_pass_set_pipeline render-pass
-                view ('get pipeline-cache (hash self))
+            'get pipeline-cache (hash self)
         else
             let fragment-module =
                 try
@@ -110,7 +109,7 @@ struct RenderPipelineBlueprint
             let new-pip =
                 wgpu.device_create_render_pipeline device
                     &local desc
-            'set state.pipeline-cache (hash self) new-pip
+            'set pipeline-cache (hash self) new-pip
             view new-pip
 
     fn clear-cache ()
