@@ -238,6 +238,8 @@ fn present ()
     if state.command-encoder
         let cmd-encoder = ('swap state.command-encoder none)
         local cmdbuf = (wgpu.command_encoder_finish ('force-unwrap cmd-encoder) null)
+        # because finish "kills" the command encoder, but it still exists in the option we
+        # swapped, we need to skip its descructor.
         lose cmd-encoder
         wgpu.queue_submit state.queue cmdbuf
         wgpu.swap_chain_present state.swap-chain
