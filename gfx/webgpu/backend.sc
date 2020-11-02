@@ -10,12 +10,34 @@ using import Map
 let wgpu = (import .wrapper)
 import ...HID
 
+inline struct-hash-fields (self)
+    let fhashes... =
+        va-map
+            inline (f)
+                let k = (keyof f.Type)
+                let v = (getattr a k)
+                hash v
+            (typeof self) . __fields__
+    let head tail = (va-split 1 fhashes...)
+    va-lfold (head)
+        inline (__ current computed)
+            hash computed current
+        (tail)
+
 struct BindGroupLayoutBlueprint
+
+    let __== struct-equality-by-field
+    let __hash = struct-hash-fields
+
     fn flush (self)
         ;
 
 struct PipelineLayoutBlueprint
     bind-group-layouts : (Map usize BindGroupLayoutBluePrint) # slot -> bind group
+
+    let __== struct-equality-by-field
+    let __hash = struct-hash-fields
+
     fn flush (self)
         ;
 
@@ -33,9 +55,7 @@ struct RenderPipelineBlueprint
     alpha-to-coverage-enabled : bool
 
     let __== struct-equality-by-field
-    inline __hash (self)
-        # FIXME: actually implement this
-        hash 0
+    let __hash = struct-hash-fields
 
     fn flush (self device)
         # we use hash for the cache to avoid lifetime problems with duplicate
