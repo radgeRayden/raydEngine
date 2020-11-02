@@ -10,6 +10,74 @@ using import Map
 let wgpu = (import .wrapper)
 import ...HID
 
+struct BindGroupLayoutBlueprint
+    fn flush (self)
+        ;
+
+struct PipelineLayoutBlueprint
+    bind-group-layouts : (Map usize BindGroupLayoutBluePrint) # slot -> bind group
+    fn flush (self)
+        ;
+
+struct RenderPipelineBlueprint
+    layout : PipelineLayoutBlueprint
+    vertex-stage : wgpu.ShaderModuleId
+    fragment-stage : (Option wgpu.ShaderModuleId)
+    primitive-topology : wgpu.PrimitiveTopology
+    rasterization-state : wgpu.RasterizationStateDescriptor
+    color-states : (Array wgpu.ColorStateDescriptor)
+    depth-stencil-state : wgpu.DepthStencilStateDescriptor
+    vertex-state : wgpu.VertexStateDescriptor
+    sample-count : u32 = 1
+    sample-mask : u32 = 0xffffffff
+    alpha-to-coverage-enabled : bool
+
+    let __== struct-equality-by-field
+    inline __hash (self)
+        # FIXME: actually implement this
+        hash 0
+
+    fn flush (self device)
+        # we use hash for the cache to avoid lifetime problems with duplicate
+        # copies.
+        global pipeline-cache : (Map hash wgpu.RenderPipelineId)
+        try
+            wgpu.render_pass_set_pipeline render-pass
+                view ('get pipeline-cache (hash self))
+        else
+            let fragment-module =
+                try
+                    'unwrap self.fragment-stage
+                else
+                    null
+
+            let desc =
+                wgpu.RenderPipelineDescriptor
+                    layout = ('flush self.layout)
+                    vertex_stage =
+                        typeinit
+                            module = self.vertex-stage
+                            entry_point = "main"
+                    fragment_stage =
+                        &local wgpu.ProgrammableStageDescriptor
+                            module = fragment-module
+                            entry_point = "main"
+                    primitive_topology = self.primitive-topology
+                    rasterization_state = self.rasterization-state
+                    color_states = self.color-states._items
+                    color_states_length = (countof self.color-states)
+                    depth_stencil_state = self.depth-stencil-state
+                    vertex_state = self.vertex-state
+                    sample_count = self.sample-count
+                    sample_mask = self.sample-mask
+                    alpha_to_coverage_enabled = self.alpha-to-coverage-enabled
+
+            let new-pip =
+                wgpu.device_create_render_pipeline device
+                    &local desc
+            'set state.pipeline-cache (hash self) new-pip
+            view new-pip
+
 struct GfxState
     # webgpu state
     surface : wgpu.SurfaceId
@@ -20,10 +88,7 @@ struct GfxState
     command-encoder : (Option wgpu.CommandEncoderId)
 
     # pipeline JIT compilation
-    pipeline-cache : (Map wgpu.RenderPipelineDescriptor wgpu.RenderPipelineId)
-    # TODO: maybe it would be better to use our own descriptor object, to avoid
-    # lifetime problems with eg. strings.
-    current-pipeline : wgpu.RenderPipelineDescriptor
+    current-pipeline : RenderPipelineBlueprint
 
 global istate : (Option GfxState)
 
@@ -92,7 +157,6 @@ fn init ()
             device = device
             queue = (wgpu.device_get_default_queue (storagecast (view device)))
             swap-chain = (create-swap-chain (storagecast (view device)) surface)
-            current-pipeline = defpip
 
 typedef+ wgpu.RenderPass
     fn finish (self)
@@ -148,21 +212,16 @@ fn present ()
         #???
         ;
 
-fn flush-pipeline (render-pass)
+fn reset-pipeline ()
     let state = ('force-unwrap istate)
-    try
-        wgpu.render_pass_set_pipeline render-pass
-            view ('get state.pipeline-cache state.current-pipeline)
-    else
-        let new-pip =
-            wgpu.device_create_render_pipeline state.device &state.current-pipeline
-        wgpu.render_pass_set_pipeline render-pass (view new-pip)
-        'set state.pipeline-cache (deref state.current-pipeline) new-pip
+    state.current-pipeline = (default-pipeline-descriptor (view state.device))
 
 fn... draw (render-pass, topology, vertex-count, instance-count = 0,
             first-vertex = 0, first-instance = 0)
-    flush-pipeline render-pass
     let state = ('force-unwrap istate)
+    let pip = ('flush state.current-pipeline state.device)
+    wgpu.render_pass_set_pipeline render-pass pip
+    ;
 
 fn set-clear-color (color)
     try
