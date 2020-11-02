@@ -54,7 +54,22 @@ struct PipelineLayoutBlueprint
             hash h
                 hash k v
 
-    fn flush (self)
+    fn flush (self device)
+        try
+            'get pipeline-layout-cache (hash self)
+        else
+            local bgroup-layouts : (Array wgpu.BindGroupLayoutId)
+            'resize bgroup-layouts wgpu-limits.max_bind_groups
+            for idx bind-group-layout in self.bind-group-layouts
+                bgroup-layouts @ idx = ('flush bind-group-layout)
+            let new-piplayout =
+                wgpu.device_create_pipeline_layout (view device)
+                    &local wgpu.PipelineLayoutDescriptor
+                        bind_group_layouts = bgroup-layouts._items
+                        bind_group_layouts_length = (countof bgroup-layouts)
+
+            'set pipeline-layout-cache (hash self) new-piplayout
+            view new-piplayout
 
     fn clear-cache ()
         'clear pipeline-layout-cache
@@ -89,7 +104,7 @@ struct RenderPipelineBlueprint
 
             let desc =
                 wgpu.RenderPipelineDescriptor
-                    layout = ('flush self.layout)
+                    layout = ('flush self.layout device)
                     vertex_stage =
                         typeinit
                             module = self.vertex-stage
@@ -109,7 +124,7 @@ struct RenderPipelineBlueprint
                     alpha_to_coverage_enabled = self.alpha-to-coverage-enabled
 
             let new-pip =
-                wgpu.device_create_render_pipeline device
+                wgpu.device_create_render_pipeline (view device)
                     &local desc
             'set pipeline-cache (hash self) new-pip
             view new-pip
