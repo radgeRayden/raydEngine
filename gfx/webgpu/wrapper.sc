@@ -78,6 +78,34 @@ let constructors =
 
 run-stage;
 
+let basic-struct-compare =
+    inline __== (A B)
+        static-if (A == B)
+            inline (self other)
+                va-map
+                    inline (field)
+                        let k = (keyof field)
+                        let va vb =
+                            getattr self k
+                            getattr other k
+                        va == vb
+                    elementsof (storageof A)
+
+inline make-struct-comparable (T)
+    typedef+ T
+        let __== = basic-struct-compare
+
+do
+    using wgpu
+    va-map make-struct-comparable
+        RenderPipelineDescriptor
+        ProgrammableStageDescriptor
+        VertexStateDescriptor
+
+typedef+ wgpu.RenderPipelineDescriptor
+    inline __hash (self)
+        hash (self.vertex_state.index_format as i32)
+
 do
     using wgpu
     using handle-types
