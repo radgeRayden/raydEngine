@@ -38,7 +38,10 @@ struct BindGroupLayoutBlueprint
     bind-group-entries : (Map usize wgpu.BindGroupLayoutEntry)
 
     let __== = struct-equality-by-field
-    let __hash = struct-hash-fields
+    inline __hash (self)
+        fold (h = (hash 0)) for k v in self.bind-group-entries
+            hash h
+                hash k v
 
     fn flush (self)
         ;
