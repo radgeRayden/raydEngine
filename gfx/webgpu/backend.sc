@@ -35,6 +35,7 @@ global wgpu-limits : wgpu.CLimits
 # At the moment, these caches are not thread safe. Thread safety could be achieved by putting
 # a mutex over the access of the global caches.
 struct BindGroupLayoutBlueprint
+    bind-group-entries : (Map usize wgpu.BindGroupLayoutEntry)
 
     let __== = struct-equality-by-field
     let __hash = struct-hash-fields
@@ -157,6 +158,85 @@ fn create-swap-chain (device surface)
             height = (height as u32)
             present_mode = wgpu.PresentMode.Fifo
 
+fn default-pipeline (device)
+    fn default-vertex-shader ()
+        using import glsl
+        using import glm
+        buffer vertex-data :
+            struct VertexData plain
+                position : (array vec4)
+            set = 0
+            binding = 0
+        gl_Position = vertex-data.position @ gl_VertexIndex
+
+    fn default-fragment-shader ()
+        using import glsl
+        using import glm
+        out fcolor : vec4
+            location = 0
+        fcolor = (vec4 1)
+
+    let vshader = (static-compile-spirv 0x10000 'vertex (static-typify default-vertex-shader))
+    vlen := (countof vshader) // 4
+    let fshader = (static-compile-spirv 0x10000 'fragment (static-typify default-fragment-shader))
+    flen := (countof fshader) // 4
+    let vertex-module =
+        wgpu.device_create_shader_module (storagecast (view device))
+            wgpu.ShaderSource
+                bytes = (vshader as rawstring as (pointer u32))
+                length = vlen
+    let fragment-module =
+        wgpu.device_create_shader_module (storagecast (view device))
+            wgpu.ShaderSource
+                bytes = (fshader as rawstring as (pointer u32))
+                length = flen
+
+    local layoutb : PipelineLayoutBlueprint
+    local vertex-bgroup : BindGroupLayoutBlueprint
+    'set vertex-bgroup.bind-group-entries 0:usize
+        wgpu.BindGroupLayoutEntry
+            binding = 0
+            visibility = wgpu.ShaderStage_VERTEX
+            ty = wgpu.BindingType.StorageBuffer
+
+    'set layoutb.bind-group-layouts 0:usize
+        deref vertex-bgroup
+
+    local color-states : (Array wgpu.ColorStateDescriptor)
+    'emplace-append color-states
+        format = wgpu.TextureFormat.Bgra8UnormSrgb
+        alpha_blend =
+            typeinit
+                src_factor = wgpu.BlendFactor.SrcAlpha
+                dst_factor = wgpu.BlendFactor.OneMinusSrcAlpha
+                operation = wgpu.BlendOperation.Add
+        color_blend =
+            typeinit
+                src_factor = wgpu.BlendFactor.SrcAlpha
+                dst_factor = wgpu.BlendFactor.OneMinusSrcAlpha
+                operation = wgpu.BlendOperation.Add
+        write_mask = wgpu.ColorWrite_ALL
+
+    RenderPipelineBlueprint
+        layout = layoutb
+        vertex-stage = vertex-module
+        fragment-stage = fragment-module
+        primitive-topology = wgpu.PrimitiveTopology.TriangleList
+        rasterization-state =
+            typeinit
+                front_face = wgpu.FrontFace.Ccw
+                cull_mode = wgpu.CullMode.None
+                depth_bias = 0
+                depth_bias_slope_scale = 0.0
+                depth_bias_clamp = 0.0
+        color-states = color-states
+        # depth-stencil-state =
+        vertex-state =
+            typeinit
+                index_format = wgpu.IndexFormat.Uint16
+                vertex_buffers = null
+                vertex_buffers_length = 0
+
 fn init ()
     # TODO: use settings to configure
     wgpu.set_log_level wgpu.LogLevel.Error
@@ -211,6 +291,7 @@ fn init ()
             device = device
             queue = (wgpu.device_get_default_queue (storagecast (view device)))
             swap-chain = (create-swap-chain (storagecast (view device)) surface)
+            current-pipeline = (default-pipeline (view device))
 
 typedef+ wgpu.RenderPass
     fn finish (self)
@@ -275,7 +356,7 @@ fn reset-pipeline ()
     RenderPipelineBlueprint.clear-cache;
     PipelineLayoutBlueprint.clear-cache;
     BindGroupLayoutBlueprint.clear-cache;
-    # state.current-pipeline = (default-pipeline-descriptor (view state.device))
+    state.current-pipeline = (default-pipeline (view state.device))
 
 fn... draw (render-pass, topology, vertex-count, instance-count = 0,
             first-vertex = 0, first-instance = 0)
