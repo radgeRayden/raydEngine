@@ -1,3 +1,5 @@
+using import .cimport-helpers
+
 typedef SCGenPointer < pointer
     inline __imply (A B)
         inline (self)
