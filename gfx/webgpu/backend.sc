@@ -6,6 +6,7 @@ using import glm
 using import String
 using import enum
 using import Map
+using import Array
 
 let wgpu = (import .wrapper)
 import ...HID
@@ -15,7 +16,7 @@ inline struct-hash-fields (self)
         va-map
             inline (f)
                 let k = (keyof f.Type)
-                let v = (getattr a k)
+                let v = (getattr self k)
                 hash v
             (typeof self) . __fields__
     let head tail = (va-split 1 fhashes...)
@@ -35,7 +36,7 @@ global wgpu-limits : wgpu.CLimits
 # a mutex over the access of the global caches.
 struct BindGroupLayoutBlueprint
 
-    let __== struct-equality-by-field
+    let __== = struct-equality-by-field
     let __hash = struct-hash-fields
 
     fn flush (self)
@@ -44,11 +45,11 @@ struct BindGroupLayoutBlueprint
     fn clear-cache ()
 
 struct PipelineLayoutBlueprint
-    bind-group-layouts : (Map usize BindGroupLayoutBluePrint) # slot -> bind group
+    bind-group-layouts : (Map usize BindGroupLayoutBlueprint) # slot -> bind group
 
     global pipeline-layout-cache : (Map hash wgpu.PipelineLayoutId)
 
-    let __== struct-equality-by-field
+    let __== = struct-equality-by-field
     inline __hash (self)
         fold (h = (hash 0)) for k v in self.bind-group-layouts
             hash h
@@ -89,7 +90,7 @@ struct RenderPipelineBlueprint
 
     global pipeline-cache : (Map hash wgpu.RenderPipelineId)
 
-    let __== struct-equality-by-field
+    let __== = struct-equality-by-field
     let __hash = struct-hash-fields
 
     fn flush (self device)
@@ -272,8 +273,8 @@ fn reset-pipeline ()
         free VRAM when changing a level, for example.
     let state = ('force-unwrap istate)
     RenderPipelineBlueprint.clear-cache;
-    RenderPipelineLayoutBlueprint.clear-cache;
-    BindGroupLayoutBluePrint.clear-cache;
+    PipelineLayoutBlueprint.clear-cache;
+    BindGroupLayoutBlueprint.clear-cache;
     # state.current-pipeline = (default-pipeline-descriptor (view state.device))
 
 fn... draw (render-pass, topology, vertex-count, instance-count = 0,
