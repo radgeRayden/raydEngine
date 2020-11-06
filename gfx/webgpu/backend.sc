@@ -85,20 +85,23 @@ struct PipelineLayoutBlueprint
 
     fn flush (self device)
         try
-            'get pipeline-layout-cache (hash self)
+            storagecast
+                view
+                    'get pipeline-layout-cache (hash self)
         else
-            local bgroup-layouts : (Array wgpu.BindGroupLayoutId)
+            local bgroup-layouts : (Array (storageof wgpu.BindGroupLayoutId))
             'resize bgroup-layouts wgpu-limits.max_bind_groups
             for idx bind-group-layout in self.bind-group-layouts
                 bgroup-layouts @ idx = ('flush bind-group-layout device)
             let new-piplayout =
                 wgpu.device_create_pipeline_layout (view device)
                     &local wgpu.PipelineLayoutDescriptor
-                        bind_group_layouts = bgroup-layouts._items
+                        bind_group_layouts = (bgroup-layouts._items as (pointer u64))
                         bind_group_layouts_length = (countof bgroup-layouts)
 
+            let result = (copy (storagecast (view new-piplayout)))
             'set pipeline-layout-cache (hash self) new-piplayout
-            view new-piplayout
+            result
 
     fn clear-cache ()
         'clear pipeline-layout-cache
@@ -128,7 +131,9 @@ struct RenderPipelineBlueprint
 
     fn flush (self device)
         try
-            'get pipeline-cache (hash self)
+            storagecast
+                view
+                    'get pipeline-cache (hash self)
         else
             let fragment-module =
                 try
@@ -150,10 +155,10 @@ struct RenderPipelineBlueprint
                             module = fragment-module
                             entry_point = "main"
                     primitive_topology = self.primitive-topology
-                    rasterization_state = self.rasterization-state
+                    rasterization_state = &self.rasterization-state
                     color_states = self.color-states._items
                     color_states_length = (countof self.color-states)
-                    depth_stencil_state = self.depth-stencil-state
+                    depth_stencil_state = &self.depth-stencil-state
                     vertex_state = self.vertex-state
                     sample_count = self.sample-count
                     sample_mask = self.sample-mask
@@ -162,8 +167,9 @@ struct RenderPipelineBlueprint
             let new-pip =
                 wgpu.device_create_render_pipeline (view device)
                     &local desc
+            let result = (copy (storagecast (view new-pip)))
             'set pipeline-cache (hash self) new-pip
-            view new-pip
+            result
 
     fn clear-cache ()
         'clear pipeline-cache
