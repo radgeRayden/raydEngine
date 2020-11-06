@@ -94,6 +94,11 @@ struct RenderPipelineBlueprint
 
     global pipeline-cache : (Map hash wgpu.RenderPipelineId)
 
+    typedef+ (Array wgpu.ColorStateDescriptor)
+        inline __hash (self)
+            fold (result = (hash none)) for el in self
+                hash result el
+
     let __== = struct-equality-by-field
     let __hash = struct-hash-fields
 
