@@ -62,13 +62,16 @@ struct BindGroupLayoutBlueprint
             # NOTE: complete guess on my part that more than 16 entries aren't needed. There's
             # no query for this limit at the moment.
             'resize bgroup-entries 16
-            for idx bgroup-entry in self.bind-group-entries
-                bgroup-entries @ idx = bgroup-entry
+            let max-count =
+                fold (max-count = 0) for idx bgroup-entry in self.bind-group-entries
+                    bgroup-entries @ idx = bgroup-entry
+                    ? (idx > max-count) idx max-count
+
             let new-bgroup-layout =
                 wgpu.device_create_bind_group_layout (view device)
                     &local wgpu.BindGroupLayoutDescriptor
                         entries = bgroup-entries._items
-                        entries_length = (countof bgroup-entries)
+                        entries_length = max-count
             let result = (copy (storagecast (view new-bgroup-layout)))
             'set bind-group-layout-cache (hash self) new-bgroup-layout
             result
