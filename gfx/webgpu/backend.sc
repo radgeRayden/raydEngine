@@ -113,7 +113,7 @@ struct RenderPipelineBlueprint
     primitive-topology : wgpu.PrimitiveTopology
     rasterization-state : wgpu.RasterizationStateDescriptor
     color-states : (Array wgpu.ColorStateDescriptor)
-    depth-stencil-state : wgpu.DepthStencilStateDescriptor
+    depth-stencil-state : (Option wgpu.DepthStencilStateDescriptor)
     vertex-state : wgpu.VertexStateDescriptor
     sample-count : u32 = 1
     sample-mask : u32 = 0xffffffff
