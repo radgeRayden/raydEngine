@@ -28,8 +28,20 @@ typedef RECStruct < CStruct
 typedef RECEnum < CEnum
     inline __typecall (cls)
         bitcast 0 cls
+    inline __hash (self)
+        hash (storagecast self)
+
+typedef REReal < real
+    inline __hash (self)
+        hash (storagecast self)
+
+typedef REInteger < integer
+    inline __hash (self)
+        hash (storagecast self)
 
 do
     let CStruct = RECStruct
     let CEnum = RECEnum
+    let integer = REInteger
+    let real = REReal
     locals;
