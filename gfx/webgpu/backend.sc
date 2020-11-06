@@ -108,9 +108,11 @@ struct RenderPipelineBlueprint
         else
             let fragment-module =
                 try
-                    'unwrap self.fragment-stage
+                    deref
+                        storagecast
+                            view ('unwrap self.fragment-stage)
                 else
-                    null
+                    0:u64
 
             let desc =
                 wgpu.RenderPipelineDescriptor
