@@ -32,6 +32,10 @@ global wgpu-limits : wgpu.CLimits
 # use our own version of the descriptors to have correct lifetime handling.
 # Caches use the hash type to index the map to avoid lifetime problems with duplicate
 # copies.
+# Similarly, flushing the descriptor has to return a non lifetime managed handle, as lifetime
+# of the objects is managed by the caches themselves. This could be avoided by using an Rc, but
+# since it's for internal usage only I decided to avoid the overhead. Could be revised if
+# safety becomes an issue here.
 # At the moment, these caches are not thread safe. Thread safety could be achieved by putting
 # a mutex over the access of the global caches.
 struct BindGroupLayoutBlueprint
