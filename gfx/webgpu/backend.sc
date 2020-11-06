@@ -7,6 +7,7 @@ using import String
 using import enum
 using import Map
 using import Array
+using import Box
 
 let wgpu = (import .wrapper)
 import ...HID
@@ -25,6 +26,8 @@ inline struct-hash-fields (self)
             hash computed current
         (tail)
 
+struct GfxState
+global istate : (Option (Box GfxState))
 global wgpu-limits : wgpu.CLimits
 
 # NOTE:
@@ -193,8 +196,6 @@ struct GfxState
     # pipeline JIT compilation
     current-pipeline : RenderPipelineBlueprint
 
-global istate : (Option GfxState)
-
 fn create-swap-chain (device surface)
     let width height = (HID.window.size)
     wgpu.device_create_swap_chain device surface
@@ -320,7 +321,6 @@ fn init ()
             &wgpu-limits
             false # no shader validation - scopes already does it
             null
-
     # default pipeline
     # ================
     # TODO: fill this out with even more defaults
@@ -332,13 +332,14 @@ fn init ()
                     index_format = wgpu.IndexFormat.Uint16
 
     istate =
-        GfxState
-            surface = surface
-            adapter = adapter
-            device = device
-            queue = (wgpu.device_get_default_queue (storagecast (view device)))
-            swap-chain = (create-swap-chain (storagecast (view device)) surface)
-            current-pipeline = (default-pipeline (view device))
+        Box.wrap
+            GfxState
+                surface = surface
+                adapter = adapter
+                device = device
+                queue = (wgpu.device_get_default_queue (storagecast (view device)))
+                swap-chain = (create-swap-chain (storagecast (view device)) surface)
+                current-pipeline = (default-pipeline (view device))
 
 typedef+ wgpu.RenderPass
     fn finish (self)
