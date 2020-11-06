@@ -94,8 +94,19 @@ struct PipelineLayoutBlueprint
         else
             local bgroup-layouts : (Array (storageof wgpu.BindGroupLayoutId))
             'resize bgroup-layouts wgpu-limits.max_bind_groups
+
+            let dummy-layout =
+                storagecast
+                    view
+                        ('force-unwrap istate) . dummy-bind-group-layout
+
+            # make sure we don't have gaps
+            for i in (range (countof bgroup-layouts))
+                bgroup-layouts @ i = (copy dummy-layout)
+
             for idx bind-group-layout in self.bind-group-layouts
                 bgroup-layouts @ idx = ('flush bind-group-layout device)
+
             let new-piplayout =
                 wgpu.device_create_pipeline_layout (view device)
                     &local wgpu.PipelineLayoutDescriptor
@@ -195,6 +206,7 @@ struct GfxState
 
     # pipeline JIT compilation
     current-pipeline : RenderPipelineBlueprint
+    dummy-bind-group-layout : wgpu.BindGroupLayoutId
 
 fn create-swap-chain (device surface)
     let width height = (HID.window.size)
@@ -331,6 +343,12 @@ fn init ()
                 typeinit
                     index_format = wgpu.IndexFormat.Uint16
 
+    let dummy-bgroup-layout =
+        wgpu.device_create_bind_group_layout (storagecast (view device))
+            &local wgpu.BindGroupLayoutDescriptor
+                label = "dummy bind group layout"
+                entries = null
+                entries_length = 0
     istate =
         Box.wrap
             GfxState
@@ -340,6 +358,7 @@ fn init ()
                 queue = (wgpu.device_get_default_queue (storagecast (view device)))
                 swap-chain = (create-swap-chain (storagecast (view device)) surface)
                 current-pipeline = (default-pipeline (view device))
+                dummy-bind-group-layout = dummy-bgroup-layout
 
 typedef+ wgpu.RenderPass
     fn finish (self)
