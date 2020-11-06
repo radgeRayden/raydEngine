@@ -143,6 +143,13 @@ struct RenderPipelineBlueprint
                 else
                     0:u64
 
+            let depth-stencil-state =
+                try
+                    let desc = ('unwrap self.depth-stencil-state)
+                    &desc as (pointer wgpu.DepthStencilStateDescriptor)
+                else
+                    nullof (pointer wgpu.DepthStencilStateDescriptor)
+
             let desc =
                 wgpu.RenderPipelineDescriptor
                     layout = ('flush self.layout device)
@@ -158,7 +165,7 @@ struct RenderPipelineBlueprint
                     rasterization_state = &self.rasterization-state
                     color_states = self.color-states._items
                     color_states_length = (countof self.color-states)
-                    depth_stencil_state = &self.depth-stencil-state
+                    depth_stencil_state = depth-stencil-state
                     vertex_state = self.vertex-state
                     sample_count = self.sample-count
                     sample_mask = self.sample-mask
