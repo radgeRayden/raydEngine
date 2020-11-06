@@ -37,14 +37,34 @@ global wgpu-limits : wgpu.CLimits
 struct BindGroupLayoutBlueprint
     bind-group-entries : (Map usize wgpu.BindGroupLayoutEntry)
 
+    global bind-group-layout-cache : (Map hash wgpu.BindGroupLayoutId)
+
     let __== = struct-equality-by-field
     inline __hash (self)
         fold (h = (hash 0)) for k v in self.bind-group-entries
             hash h
                 hash k v
 
-    fn flush (self)
-        ;
+    fn flush (self device)
+        try
+            storagecast
+                view
+                    'get bind-group-layout-cache (hash self)
+        else
+            local bgroup-entries : (Array wgpu.BindGroupLayoutEntry)
+            # NOTE: complete guess on my part that more than 16 entries aren't needed. There's
+            # no query for this limit at the moment.
+            'resize bgroup-entries 16
+            for idx bgroup-entry in self.bind-group-entries
+                bgroup-entries @ idx = bgroup-entry
+            let new-bgroup-layout =
+                wgpu.device_create_bind_group_layout (view device)
+                    &local wgpu.BindGroupLayoutDescriptor
+                        entries = bgroup-entries._items
+                        entries_length = (countof bgroup-entries)
+            let result = (copy (storagecast (view new-bgroup-layout)))
+            'set bind-group-layout-cache (hash self) new-bgroup-layout
+            result
 
     fn clear-cache ()
 
@@ -66,7 +86,7 @@ struct PipelineLayoutBlueprint
             local bgroup-layouts : (Array wgpu.BindGroupLayoutId)
             'resize bgroup-layouts wgpu-limits.max_bind_groups
             for idx bind-group-layout in self.bind-group-layouts
-                bgroup-layouts @ idx = ('flush bind-group-layout)
+                bgroup-layouts @ idx = ('flush bind-group-layout device)
             let new-piplayout =
                 wgpu.device_create_pipeline_layout (view device)
                     &local wgpu.PipelineLayoutDescriptor
