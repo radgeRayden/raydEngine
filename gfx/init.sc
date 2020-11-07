@@ -13,4 +13,7 @@ do
         present
         set-clear-color
         draw
+
+        StorageBuffer
+        IndexBuffer
     locals;

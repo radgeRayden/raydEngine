@@ -445,6 +445,50 @@ fn set-clear-color (color)
     else
         error "gfx module not initialized"
 
+struct StorageBuffer
+    _handle : wgpu.BufferId
+
+    inline __typecall (cls size)
+        let state = ('force-unwrap istate)
+        super-type.__typecall cls
+            _handle =
+                wgpu.device_create_buffer (storagecast (view state.device))
+                    &local wgpu.BufferDescriptor
+                        label = "storage buffer"
+                        size = size
+                        usage = (wgpu.BufferUsage_COPY_DST | wgpu.BufferUsage_STORAGE)
+
+    inline __drop (self)
+        wgpu.buffer_destroy self._handle
+        ;
+
+struct IndexBuffer
+    _handle : wgpu.BufferId
+    _format : wgpu.IndexFormat
+
+    inline __typecall (cls T size)
+        let state = ('force-unwrap istate)
+        let index-format =
+            static-match T
+            case u16
+                wgpu.IndexFormat.Uint16
+            case u32
+                wgpu.IndexFormat.Uint32
+            default
+                static-error "forbidden index format"
+        super-type.__typecall cls
+            _handle =
+                wgpu.device_create_buffer (storagecast (view state.device))
+                    &local wgpu.BufferDescriptor
+                        label = "index buffer"
+                        size = size
+                        usage = (wgpu.BufferUsage_COPY_DST | wgpu.BufferUsage_INDEX)
+            _format = index-format
+
+    inline __drop (self)
+        wgpu.buffer_destroy self._handle
+        ;
+
 do
     let
         init
@@ -452,4 +496,8 @@ do
         set-clear-color
         present
         draw
+
+        # types
+        StorageBuffer
+        IndexBuffer
     locals;
