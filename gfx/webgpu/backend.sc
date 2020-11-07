@@ -62,6 +62,9 @@ struct BindGroupLayoutBlueprint
             # NOTE: complete guess on my part that more than 16 entries aren't needed. There's
             # no query for this limit at the moment.
             'resize bgroup-entries 16
+            for i el in (enumerate bgroup-entries)
+                el.binding = i as u32
+
             let max-count =
                 fold (max-count = 0:usize) for idx bgroup-entry in self.bind-group-entries
                     bgroup-entries @ idx = bgroup-entry
