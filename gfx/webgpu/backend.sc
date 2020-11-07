@@ -63,9 +63,9 @@ struct BindGroupLayoutBlueprint
             # no query for this limit at the moment.
             'resize bgroup-entries 16
             let max-count =
-                fold (max-count = 0) for idx bgroup-entry in self.bind-group-entries
+                fold (max-count = 0:usize) for idx bgroup-entry in self.bind-group-entries
                     bgroup-entries @ idx = bgroup-entry
-                    ? (idx > max-count) idx max-count
+                    ? ((idx + 1) > max-count) (idx + 1) (max-count as usize)
 
             let new-bgroup-layout =
                 wgpu.device_create_bind_group_layout (view device)
