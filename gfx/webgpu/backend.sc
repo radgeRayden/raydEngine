@@ -30,6 +30,13 @@ struct GfxState
 global istate : (Option (Box GfxState))
 global wgpu-limits : wgpu.CLimits
 
+# LIFE OF A FRAME
+# ===============
+# begin-frame; # makes sure previous frame is finished, sets up a command encoder.
+# client application creates any number of RenderPasses and draws to them.
+# One of those render passes has to target the swap chain image. (or not?)
+# end-frame; # finishes the command encoder and submits work to the gpu.
+
 # NOTE:
 # Pipelines and their dependencies are cached, and checked by hash of their descriptors. We
 # use our own version of the descriptors to have correct lifetime handling.
